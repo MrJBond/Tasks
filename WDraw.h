@@ -6,6 +6,7 @@
 #include "Polygon.h"
 #include "Polyline.h"
 #include "UnknownType.h"
+#include <GLFW/glfw3.h>
 
 
 using namespace geometry;
@@ -28,5 +29,5 @@ public:
     virtual void drawText(const char* text);
 
     void drawObject(Shape* obj);
-
+    int initGraph(const std::vector<Shape*>& shapes);
 };

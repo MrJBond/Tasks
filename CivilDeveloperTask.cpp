@@ -6,6 +6,7 @@
 #include "Exceptions.h"
 #include <tchar.h>
 
+
 using namespace geometry;
 /*
 * 
@@ -93,7 +94,7 @@ void convertArrayToObj(DataProvider* dataProvider, std::vector<Shape*>& shapes) 
 				((Arch*)arch)->set(Point2d(nums[0], nums[1]), nums[2]);
 				((Arch*)arch)->setAngles(nums[3], nums[4]); // Next are angles
 				((Arch*)arch)->setPoint(Point2d(nums[n - 2], nums[n - 1])); // Two last are for control point
-
+			
 				shapes.push_back(arch);
 
 				break;
@@ -171,32 +172,32 @@ int _tmain(int argc, _TCHAR* argv[])
 		rect2->set(p1, p3);
 	}
 	{// Circle
-		Point2d p1(1.0, 1.0);
+		Point2d p1(10.0, 10.0);
 		((Circle*)circle1)->set(p1, 5.0);
 		circle2->set(p1, 5.0);
 	}
 	{ // Arch
-		Point2d p1(150., 150.);
-		((Arch*)arch1)->set(p1,44.0);
-		((Arch*)arch1)->setAngles(PI/2, PI/2);
-		((Arch*)arch1)->setPoint(Point2d(150.0, 194.0));
-		(arch2)->set(p1, 44.0);
-		(arch2)->setAngles(PI / 2, PI / 2);
-		(arch2)->setPoint(Point2d(150.0, 194.0));
-		(arch3)->set(p1, 44.0);
+		Point2d p1(20., 20.);
+		((Arch*)arch1)->set(p1,5.0);
+		((Arch*)arch1)->setAngles(PI / 2, PI / 2);
+		((Arch*)arch1)->setPoint(Point2d(20.0, 25.0));
+		(arch2)->set(p1, 5.0);
+		(arch2)->setAngles(PI / 2, PI / 2 );
+		(arch2)->setPoint(Point2d(20.0, 25.0));
+		(arch3)->set(p1, 5.0);
 		(arch3)->setAngles(0.0, PI / 2);
-		(arch3)->setPoint(Point2d(44.0 * cos(PI/4) + 150.0, 44.0 * sin(PI / 4) + 150.0)); // 45 degree
-		(arch4)->set(p1, 44.0);
+		(arch3)->setPoint(Point2d(5.0 * cos(PI / 4) + 20.0, 5.0 * sin(PI / 4) + 20.0)); // 45 degree
+		(arch4)->set(p1, 5.0);
 		(arch4)->setAngles(0.0, PI / 2); // bigger part
-		(arch4)->setPoint(Point2d(44.0 * cos(3*PI / 2) + 150.0, 44.0 * sin(3*PI / 2) + 150.0)); // 3*PI/2
+		(arch4)->setPoint(Point2d(5.0 * cos(3*PI / 2) + 20.0, 5.0 * sin(3*PI / 2) + 20.0)); // 3*PI/2
 
 	}
 	{ // Polyline
-		Point2d p1(0.0, 0.0);
-		Point2d p2(1.0, 1.0);
-		Point2d p3(0.0, 1.0);
-		Point2d p4(0.0, 2.0);
-		Point2d p5(5.0, 5.0);
+		Point2d p1(20.0, 20.0);
+		Point2d p2(21.0, 23.0);
+		Point2d p3(15.0, 10.0);
+		Point2d p4(30.0, 30.0);
+		Point2d p5(27.0, 28.0);
 		((Polyline*)polyline1)->set(p1, p2, p3, p4, p5);
 		polyline2->set(p1, p2, p3, p4, p5);
 	}
@@ -222,53 +223,66 @@ int _tmain(int argc, _TCHAR* argv[])
 	std::vector<Point2d> res = rect1->boundingBox();
 	if (res != expectedRes)
 		printf("FAIL 1\n");
-	std::vector<Point2d> expectedResCircle = {Point2d(-4.0, -4.0), Point2d(6.0, 6.0), Point2d(-4.0, 6.0), Point2d(6.0, -4.0)};
+	std::vector<Point2d> expectedResCircle = {Point2d(5.0, 5.0), Point2d(15.0, 15.0), Point2d(5.0, 15.0), Point2d(15.0, 5.0)};
 	std::vector<Point2d> resCircle = circle1->boundingBox();
+
 	if (resCircle != expectedResCircle)
 		printf("FAIL 2\n");
-	std::vector<Point2d> expectedResPolyline = {Point2d(0.0, 0.0), Point2d(5.0, 5.0), Point2d(0.0, 5.0), Point2d(5.0, 0.0)};
+	std::vector<Point2d> expectedResPolyline = {Point2d(15.0, 10.0), Point2d(30.0, 30.0), Point2d(15.0, 30.0), Point2d(30.0, 10.0)};
 	std::vector<Point2d> resPolyline = polyline1->boundingBox();
+
 	if (resPolyline != expectedResPolyline)
 		printf("FAIL 3\n");
 	std::vector<Point2d> expectedResPolygon = {Point2d(0.0, 0.0), Point2d(35.0, 50.0), Point2d(0.0, 50.0), Point2d(35.0, 0) };
 	std::vector<Point2d> resPolygon = polygon1->boundingBox();
 	if (resPolygon != expectedResPolygon)
 		printf("FAIL 4\n");
-	std::vector<Point2d> expectedResArch = { Point2d(106.0, 106.0), Point2d(194.0, 106.0), Point2d(106.0, 150.0), Point2d(194.0, 150.0) };
+	std::vector<Point2d> expectedResArch = { Point2d(15.0, 20.0), Point2d(25.0, 20.0), Point2d(15.0, 25.0), Point2d(25.0, 25.0) };
 	std::vector<Point2d> resArch = arch1->boundingBox();
 	if (resArch != expectedResArch)
 		printf("FAIL 5\n");
+
+	std::vector<Point2d> expectedResArch3 = { Point2d(20.0, 20.0), Point2d(25.0, 20.0), Point2d(20.0, 25.0), Point2d(25.0, 25.0) };
+	std::vector<Point2d> resArch3 = arch3->boundingBox();
+	if (resArch3 != expectedResArch3)
+		printf("FAIL 6\n");
+
+	std::vector<Point2d> expectedResArch4 = { Point2d(15.0, 15.0), Point2d(25.0, 15.0), Point2d(15.0, 25.0), Point2d(25.0, 25.0) };
+	std::vector<Point2d> resArch4 = arch4->boundingBox();
+	if (resArch4 != expectedResArch4)
+		printf("FAIL 7\n");
+
 
 
 	// perimeter
     double expectedPerRect = 16;
 	double resPerRec = rect1->perimeter();
 	if (resPerRec != expectedPerRect)
-		printf("FAIL 6\n");
+		printf("FAIL 8\n");
 	double expectedPerCircle = 10*PI;
 	double resPerCircle = circle1->perimeter();
 	if (resPerCircle != expectedPerCircle)
-		printf("FAIL 7\n");
-	double expectedPerPolyline = 9.245;
+		printf("FAIL 9\n");
+	double expectedPerPolyline = 46.086;
 	double resPerPolyline = std::round(polyline1->perimeter() * 10 * 10* 10)/(10*10*10); // round the result
 	if (resPerPolyline != expectedPerPolyline)
-		printf("FAIL 8\n");
+		printf("FAIL 10\n");
 	double expectedPerPolygon = 145.326;
 	double resPerPolygon = std::round(polygon1->perimeter() * 10 * 10 * 10) / (10 * 10 * 10); // round the result
 	if (resPerPolygon != expectedPerPolygon)
-		printf("FAIL 9\n");
-	double expectedPerArch = PI*44.0; // 180 degree so it will work
+		printf("FAIL 11\n");
+	double expectedPerArch = PI*5.0; // 180 degree so it will work
 	double resPerArch = arch1->perimeter();
 	if (resPerArch != expectedPerArch)
-		printf("FAIL 10\n");
-	double expectedPerArch3 = PI * 22.0; 
+		printf("FAIL 12\n");
+	double expectedPerArch3 = PI * 2.5; 
 	double resPerArch3 = arch3->perimeter();
 	if (resPerArch3 != expectedPerArch3)
-		printf("FAIL 11\n");
-	double expectedPerArch4 = std::round((2*PI*44.0 - PI * 22.0) *10*10*10) / (10 * 10 * 10);
+		printf("FAIL 13\n");
+	double expectedPerArch4 = std::round((2*PI*5.0 - PI * 2.5) *10*10*10) / (10 * 10 * 10);
 	double resPerArch4 = std::round(arch4->perimeter()*10*10*10) / (10*10*10);
 	if (resPerArch4 != expectedPerArch4)
-		printf("FAIL 12\n");
+		printf("FAIL 14\n");
 
 
 	///////////////////////////////////////////////////////////
@@ -333,6 +347,9 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 
 		// do somethidng....
+
+		// graphics
+//		drawer.initGraph(shapes);
 
 		// Clean up
 		for (int i = 0; i < shapes.size(); ++i) {
@@ -443,6 +460,20 @@ int _tmain(int argc, _TCHAR* argv[])
 	delete polyline2;
 	delete unknown1;
 	delete unknown2;
+
+
+
+
+
+
+	
+
+
+
+
+
+
+
 
 	return 0;
 }

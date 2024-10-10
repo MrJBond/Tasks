@@ -16,6 +16,7 @@ void WDraw::drawSegment (const geometry::Point2d& p1, const geometry::Point2d& p
 void WDraw::drawText(const char* text) {
     printf("%s\n", text);
 }
+
 void WDraw::drawObject(Shape* obj) {
 
     if (obj == nullptr) {
@@ -23,6 +24,7 @@ void WDraw::drawObject(Shape* obj) {
         return;
     }
     std::vector<Point2d> points;
+
     if (Arch* a = dynamic_cast<Arch*>(obj); a != nullptr) { // Arch before Circle otherwise it would cast Arch obj to Circle
         this->drawText("The arch with center: ");
         Point2d center = a->getCenter();
@@ -52,6 +54,7 @@ void WDraw::drawObject(Shape* obj) {
             // Specify the vertex
             glVertex2f(x + center.x(), y + center.y()); // Move the point to the arc's center
         }
+
 
         glEnd();
 

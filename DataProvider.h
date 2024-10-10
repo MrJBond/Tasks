@@ -55,6 +55,15 @@ public:
         this->c = 0;
         this->maxC = size;
     }
+    size_t get_size() {
+        return maxC;
+    }
+    long getC(){
+        return c;
+    }
+    void setC(long c) {
+        this->c = c;
+    }
 
 private:
     // Private constructor for Singleton

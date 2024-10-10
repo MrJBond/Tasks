@@ -89,7 +89,10 @@ int DataProvider::rdInt() {
     checkC();
     int i = (int)gData[c++];
     if (i == THROW_ERR) {
-        throw ReadError("Reading error!");
+        if (c == 1) { // the number of objects is wrong
+            throw ReadError("The number of objects is wrong");
+        }else
+            throw ReadError("Reading error!");
     }
     return i;
 }

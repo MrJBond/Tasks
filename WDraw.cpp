@@ -17,7 +17,8 @@ void WDraw::drawText(const char* text) {
     printf("%s\n", text);
 }
 
-void WDraw::drawObject(Shape* obj) {
+// when objSFML is nullptr, we will work with OpenGL
+void WDraw::drawObject(Shape* obj, std::vector<SFML_line>* objSFML, float scaleFactor) {
 
     if (obj == nullptr) {
         std::cerr << "Can not print null object!" << std::endl;
@@ -47,14 +48,29 @@ void WDraw::drawObject(Shape* obj) {
 
             a->getPointAngle() < PI ? theta *= (-1) : theta; // check control point
 
+
             // Calculate the x and y coordinates of the point on the arc
-            float x = radius * cosf(theta); // x coordinate
-            float y = radius * sinf(theta); // y coordinate
+            float x = radius * cosf(theta) + center.x(); // x coordinate
+            float y = radius * sinf(theta) + center.y(); // y coordinate
+            // second point (will be use for SFML)
+            float x2 = radius * cosf(theta + 0.05) + center.x(); // x coordinate
+            float y2 = radius * sinf(theta + 0.05) + center.y(); // y coordinate
 
-            // Specify the vertex
-            glVertex2f(x + center.x(), y + center.y()); // Move the point to the arc's center
+            ///////////////////////////////////////////////////////
+            // for SFML
+            //////////////////////////////////////////////////////
+            if (objSFML != nullptr) {
+                SFML_line line;
+                // Scale the points
+                line.vertex1 = sf::Vertex(sf::Vector2f(x * scaleFactor, y * scaleFactor));
+                line.vertex2 = sf::Vertex(sf::Vector2f(x2 * scaleFactor, y2 * scaleFactor));
+                (*objSFML).push_back(line);
+            } /////////////////////////////////////////////////////////
+            else { // OpenGl
+                // Specify the vertex
+                glVertex2f(x, y); // Move the point to the arc's center
+            }
         }
-
 
         glEnd();
 
@@ -78,11 +94,29 @@ void WDraw::drawObject(Shape* obj) {
             float theta = 2.0f * PI * float(i) / float(numSegments); // angle in radians
 
             // Calculate the x and y coordinates of the point on the circle
-            float x = radius * cosf(theta); // x coordinate
-            float y = radius * sinf(theta); // y coordinate
+            float x = radius * cosf(theta) + center.x(); // x coordinate
+            float y = radius * sinf(theta) + center.y(); // y coordinate
 
-            // Specify the vertex
-            glVertex2f(x + center.x(), y + center.y()); // Move point to the circle center
+            // second point (will be use for SFML)
+            float x2 = radius * cosf(theta + 0.05) + center.x(); // x coordinate
+            float y2 = radius * sinf(theta + 0.05) + center.y(); // y coordinate
+
+            ///////////////////////////////////////////////////////
+            // for SFML
+            //////////////////////////////////////////////////////
+            if (objSFML != nullptr) {
+                SFML_line line;
+                // Scale the points
+                line.vertex1 = sf::Vertex(sf::Vector2f(x * scaleFactor, y * scaleFactor));
+                line.vertex2 = sf::Vertex(sf::Vector2f(x2 * scaleFactor, y2 * scaleFactor));
+                (*objSFML).push_back(line);
+            } else{//////////////////////////////////////////////////////////
+
+                // OpenGL
+
+                // Specify the vertex
+                glVertex2f(x, y); // Move point to the circle center
+            }
         }
 
         glEnd();
@@ -105,68 +139,133 @@ void WDraw::drawObject(Shape* obj) {
         // Print the lines
         for (int i = 1; i < points.size(); ++i) { // Suppose the points are in the right order 
             this->drawSegment(points[i - 1], points[i]);
+
+
+            ///////////////////////////////////////////////////////
+            // for SFML
+            //////////////////////////////////////////////////////
+            if (objSFML != nullptr) {
+                SFML_line line;
+                // Scale the points
+                line.vertex1 = sf::Vertex(sf::Vector2f(points[i - 1].x() * scaleFactor, points[i - 1].y() * scaleFactor));
+                line.vertex2 = sf::Vertex(sf::Vector2f(points[i].x() * scaleFactor, points[i].y() * scaleFactor));
+                (*objSFML).push_back(line);
+            }
         }
         // The last segment
         this->drawSegment(points[points.size() - 1], points[0]);
 
 
-        // Graphics
-        glBegin(GL_LINE_LOOP); // loop for polygon
-        for (const auto& p : points) {
-            glVertex2f(p.x(), p.y());
+        ///////////////////////////////////////////////////////
+        // for SFML
+        if (objSFML != nullptr) {
+            // draw the last line
+            SFML_line line;
+            line.vertex1 = sf::Vertex(sf::Vector2f(points[0].x() * scaleFactor, points[0].y() * scaleFactor));
+            line.vertex2 = sf::Vertex(sf::Vector2f(points[points.size() - 1].x() * scaleFactor, points[points.size() - 1].y() * scaleFactor));
+            (*objSFML).push_back(line);
         }
-        // End the drawing
-        glEnd();
-        glFlush();
+        else {
+            //////////////////////////////////////////////////////
+                // OpenGl
+
+            // Graphics
+            glBegin(GL_LINE_LOOP); // loop for polygon
+            for (const auto& p : points) {
+                glVertex2f(p.x(), p.y());
+            }
+            // End the drawing
+            glEnd();
+            glFlush();
+        }
     }
     else if (Polyline* poly = dynamic_cast<Polyline*>(obj); poly != nullptr) {
         this->drawText("\nThe lines of the polyline : ");
         // Print the lines
         for (int i = 1; i < points.size(); ++i) { // Suppose the points are in the right order 
             this->drawSegment(points[i - 1], points[i]);
+
+            ///////////////////////////////////////////////////////
+            // for SFML
+            //////////////////////////////////////////////////////
+            if (objSFML != nullptr) {
+                SFML_line line;
+                // Scale the points
+                line.vertex1 = sf::Vertex(sf::Vector2f(points[i - 1].x() * scaleFactor, points[i - 1].y() * scaleFactor));
+                line.vertex2 = sf::Vertex(sf::Vector2f(points[i].x() * scaleFactor, points[i].y() * scaleFactor));
+                (*objSFML).push_back(line);
+            }
         }
-        
-        // Graphics
-        glBegin(GL_LINE_STRIP); // without connecting the first and the last 
-        for (const auto& p : points) {
-            glVertex2f(p.x(), p.y());
+        if (objSFML == nullptr) { // OpenGl
+            // Graphics
+            glBegin(GL_LINE_STRIP); // without connecting the first and the last 
+            for (const auto& p : points) {
+                glVertex2f(p.x(), p.y());
+            }
+            // End the drawing
+            glEnd();
+            glFlush();
         }
-        // End the drawing
-        glEnd();
-        glFlush();
     }
     else if (Rect* rect = dynamic_cast<Rect*>(obj); rect != nullptr) {
         this->drawText("\nThe lines of the rectangle : ");
         // Print the lines
         for (int i = 1; i < points.size(); ++i) { // Suppose the points are in the right order 
             this->drawSegment(points[i - 1], points[i]);
-        }
+
+
+            ///////////////////////////////////////////////////////
+            // for SFML
+            //////////////////////////////////////////////////////
+            if (objSFML != nullptr) {
+                SFML_line line;
+                // Scale the points
+                line.vertex1 = sf::Vertex(sf::Vector2f(points[i - 1].x() * scaleFactor, points[i - 1].y() * scaleFactor));
+                line.vertex2 = sf::Vertex(sf::Vector2f(points[i].x() * scaleFactor, points[i].y() * scaleFactor));
+                (*objSFML).push_back(line);
+            }
+        }        
         // The last segment
         this->drawSegment(points[points.size() - 1], points[0]);
 
-        // Graphics
-        glBegin(GL_LINE_LOOP); // loop for polygon
-        for (const auto& p : points) {
-            glVertex2f(p.x(), p.y());
+        ///////////////////////////////////////////////////////
+        // for SFML
+        // draw the last line
+        if (objSFML != nullptr) {
+            SFML_line line;
+            line.vertex1 = sf::Vertex(sf::Vector2f(points[0].x() * scaleFactor, points[0].y() * scaleFactor));
+            line.vertex2 = sf::Vertex(sf::Vector2f(points[points.size() - 1].x() * scaleFactor, points[points.size() - 1].y() * scaleFactor));
+            (*objSFML).push_back(line);
         }
-        // End the drawing
-        glEnd();
-        glFlush();
+        else {
+            //////////////////////////////////////////////////////
+            // OpenGl
+            // Graphics
+            glBegin(GL_LINE_LOOP); // loop for polygon
+            for (const auto& p : points) {
+                glVertex2f(p.x(), p.y());
+            }
+            // End the drawing
+            glEnd();
+            glFlush();
+        }
     }
     std::cout << std::endl << std::endl;
 }
 
-
+/************************************************************
+                    init for OpenGL
+*************************************************************/
 
 int WDraw::initGraph(const std::vector<Shape*>& shapes) {
 
     GLFWwindow* window;
 
-    /* Initialize the library */
+    // Initialize the library 
     if (!glfwInit())
         return -1;
 
-    /* Create a windowed mode window and its OpenGL context */
+    // Create a windowed mode window and its OpenGL context 
     window = glfwCreateWindow(1000, 600, "Geometry", NULL, NULL);
     if (!window)
     {
@@ -174,14 +273,14 @@ int WDraw::initGraph(const std::vector<Shape*>& shapes) {
         return -1;
     }
 
-    /* Make the window's context current */
+    // Make the window's context current 
     glfwMakeContextCurrent(window);
 
     
-    /* Loop until the user closes the window */
+    // Loop until the user closes the window 
     while (!glfwWindowShouldClose(window))
     {
-        /* Render here */
+        // Render here 
         glClear(GL_COLOR_BUFFER_BIT);
 
 
@@ -202,16 +301,67 @@ int WDraw::initGraph(const std::vector<Shape*>& shapes) {
          
         }
 
-        /*Without this, the newly rendered frame would not be displayed*/
+        // Without this, the newly rendered frame would not be displayed
 
-        /* Swap front and back buffers */
+        // Swap front and back buffers 
         glfwSwapBuffers(window);
 
         // It ensures that the program responds to user input and other system-generated events
-        /* Poll for and process events */
+        // Poll for and process events 
         glfwPollEvents();
     }
 
     glfwTerminate();
     return 0;
+}
+
+
+/************************************************************
+                    init for SFML
+*************************************************************/
+
+void WDraw::initGraphSFML(const std::vector<Shape*>& shapes) {
+
+    sf::RenderWindow window(sf::VideoMode(600, 600), "SFML");
+
+    // Create a view that will be applied to the window
+    sf::View view = window.getDefaultView();
+
+    // scale is negative because:
+
+    /*
+    OpenGL:
+    Y-Axis: Increases upwards
+
+    SFML:
+    Y-Axis: Increases downwards
+    */
+
+    float scaleFactor = -20.0f;
+    view.zoom(4.5f);
+
+    // Set the view to the window
+   window.setView(view);
+
+    while (window.isOpen())
+    {
+        sf::Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed)
+                window.close();
+        }
+
+        window.clear();
+
+        for (const auto& shape : shapes) {
+            std::vector<WDraw::SFML_line> obj; // pass as pointer to be able to set it to nullptr if we don't need it
+            this->drawObject(shape, &obj, scaleFactor); // obj is a set of lines (because default shapes don't have points)
+            for (WDraw::SFML_line l : obj) {
+                sf::Vertex line[] = {l.vertex1, l.vertex2};
+                window.draw(line, 2, sf::Lines); // draw every line
+            }
+        }
+        window.display();
+    }
 }

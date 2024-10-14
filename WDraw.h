@@ -7,6 +7,8 @@
 #include "Polyline.h"
 #include "UnknownType.h"
 #include <GLFW/glfw3.h>
+#include <SFML\Graphics.hpp>
+
 
 
 using namespace geometry;
@@ -28,6 +30,16 @@ public:
     /************************************************************************/
     virtual void drawText(const char* text);
 
-    void drawObject(Shape* obj);
+   
     int initGraph(const std::vector<Shape*>& shapes);
+
+    // SFML
+    void initGraphSFML(const std::vector<Shape*>& shapes);
+    // we will be working with lines because standard shapes don't provide points 
+    struct SFML_line { sf::Vertex vertex1; sf::Vertex vertex2; };
+
+    // object in SFML is a set of lines and a scal factor for this object
+    // default values when not dealing with SFML
+    void drawObject(Shape* obj, std::vector<SFML_line>* objSFML = nullptr, float scaleFactor = 1.0);
+    
 };

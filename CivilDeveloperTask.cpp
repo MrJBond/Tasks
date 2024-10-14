@@ -6,7 +6,6 @@
 #include "Exceptions.h"
 #include <tchar.h>
 
-
 using namespace geometry;
 /*
 * 
@@ -52,7 +51,8 @@ void convertArrayToObj(DataProvider* dataProvider, std::vector<Shape*>& shapes) 
 		}
 		catch (const ReadError& e) {
 			std::cout << e.what();
-			return; // We don't know the number of objects because of the error
+			//return; // We don't know the number of objects because of the error
+			// Or we can go and check the type
 		}
 		std::cout << "There are " << numberOfObj << " objects." << std::endl;
 
@@ -367,7 +367,11 @@ void printShapes(WDraw& drawer, const std::vector<Shape*>& shapes) {
 }
 void drawGraphics(WDraw& drawer, const std::vector<Shape*>& shapes) {
 	// graphics
-	drawer.initGraph(shapes);
+	int graph = drawer.initGraph(shapes);
+	if (graph == -1) {
+		std::cout << "Graphics Init has failed" << std::endl;
+		return;
+	}
 }
 void menu() {
 	system("cls");
@@ -376,7 +380,8 @@ void menu() {
 	std::cout << "Print the objects (3)" << std::endl;
 	std::cout << "Draw the objects (4)" << std::endl;
 	std::cout << "Set another array (5)" << std::endl;
-	std::cout << "Exit (6)" << std::endl;
+	std::cout << "Draw with SFML (6)" << std::endl;
+	std::cout << "Exit (7)" << std::endl;
 }
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -488,6 +493,14 @@ int _tmain(int argc, _TCHAR* argv[])
 		menu();
 		int answer = -1;
 		std::cin >> answer;
+
+		if (std::cin.fail()) {
+			// Invalid input
+			std::cin.clear(); // Clear the error flag
+			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Ignore the invalid input
+			continue; // Skip the rest of the loop and prompt the menu again
+		}
+
 		switch (answer) {
 		case 1:
 			test(objects);
@@ -539,10 +552,14 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 			break;
 		case 6:
+			drawer.initGraphSFML(shapes);
+			break;
+		case 7:
 			exit = true;
 			break;
 		default:
 			std::cout << "Wrong answer!" << std::endl;
+			break;
 		}
 		if (!exit) { // skip when "exit"
 			char c;
@@ -550,13 +567,11 @@ int _tmain(int argc, _TCHAR* argv[])
 			std::cin >> c;
 		}
 	}
+
 	// Clean up
 	for (int i = 0; i < shapes.size(); ++i) {
 		delete shapes[i];
 	}
-
-
-
 
 	DataProvider::DestroyInstance();
 	

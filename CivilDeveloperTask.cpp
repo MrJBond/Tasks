@@ -181,10 +181,12 @@ void convertArrayToObj(DataProvider* dataProvider, std::vector<Shape*>& shapes) 
 
 }
 
-double* initArray() {
+// return a vector to get the size dynamically
+std::vector<double> initArray() {
 
 	// without the file
-	double* gData = new double[73];
+	std::vector<double> gData(73);
+
 	gData[0] = 8; // -- число объектов в файле
 
 
@@ -333,11 +335,11 @@ void test(const std::vector<Shape*>& objects) {
 		printf("FAIL 14\n");
 }
 
-bool fileWriteRead(DataProvider* dataProvider, const std::vector<Shape*>& objects, int num) {
+bool fileWriteRead(DataProvider* dataProvider, const std::vector<Shape*>& objects) {
 	// write them to file
 	std::ofstream file("file.txt");
 
-	file << num << '\n'; // Number of objects
+	file << objects.size() << '\n'; // Number of objects
 	file.close();
 	
 	for (const auto& obj : objects) {
@@ -362,7 +364,7 @@ bool fileWriteRead(DataProvider* dataProvider, const std::vector<Shape*>& object
 void printShapes(WDraw& drawer, const std::vector<Shape*>& shapes) {
 	// print
 	for (int i = 0; i < shapes.size(); ++i) {
-		drawer.drawObject(shapes[i]);
+		drawer.drawObject(shapes[i], nullptr, nullptr);
 	}
 }
 void drawGraphics(WDraw& drawer, const std::vector<Shape*>& shapes) {
@@ -373,18 +375,7 @@ void drawGraphics(WDraw& drawer, const std::vector<Shape*>& shapes) {
 		return;
 	}
 }
-void menu() {
-	system("cls");
-	std::cout << "Test the objects (1)" << std::endl;
-	std::cout << "Write to file and read from it (2)" << std::endl;
-	std::cout << "Print the objects (3)" << std::endl;
-	std::cout << "Draw the objects (4)" << std::endl;
-	std::cout << "Set another array (5)" << std::endl;
-	std::cout << "Draw with SFML (6)" << std::endl;
-	std::cout << "Exit (7)" << std::endl;
-}
-int _tmain(int argc, _TCHAR* argv[])
-{
+void initObjects(std::vector<Shape*>& objects) {
 	// Create objects
 	Shape* rect1 = factory(Objects::RECT);
 	Rect* rect2 = new Rect();
@@ -418,18 +409,18 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 	{ // Arch
 		Point2d p1(20., 20.);
-		((Arch*)arch1)->set(p1,5.0);
+		((Arch*)arch1)->set(p1, 5.0);
 		((Arch*)arch1)->setAngles(PI / 2, PI / 2);
 		((Arch*)arch1)->setPoint(Point2d(20.0, 25.0));
 		(arch2)->set(p1, 5.0);
-		(arch2)->setAngles(PI / 2, PI / 2 );
+		(arch2)->setAngles(PI / 2, PI / 2);
 		(arch2)->setPoint(Point2d(20.0, 25.0));
 		(arch3)->set(p1, 10.0);
 		(arch3)->setAngles(0.0, PI / 2);
 		(arch3)->setPoint(Point2d(10.0 * cos(PI / 4) + 20.0, 10.0 * sin(PI / 4) + 20.0)); // 45 degree
 		(arch4)->set(p1, 15.0);
 		(arch4)->setAngles(0.0, PI / 2); // bigger part
-		(arch4)->setPoint(Point2d(15.0 * cos(3*PI / 2) + 20.0, 15.0 * sin(3*PI / 2) + 20.0)); // 3*PI/2
+		(arch4)->setPoint(Point2d(15.0 * cos(3 * PI / 2) + 20.0, 15.0 * sin(3 * PI / 2) + 20.0)); // 3*PI/2
 
 	}
 	{ // Polyline
@@ -452,11 +443,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 	{ // Unknowntype
 		for (int i = 0; i < 10; ++i) {
-			((UnknownType*)unknown1)->addEl(i*1.4);
+			((UnknownType*)unknown1)->addEl(i * 1.4);
 			unknown2->addEl(i * 1.4);
 		}
 	}
-	std::vector<Shape*> objects;
 	objects.push_back(rect1);
 	objects.push_back(rect2);
 	objects.push_back(circle1);
@@ -471,25 +461,190 @@ int _tmain(int argc, _TCHAR* argv[])
 	objects.push_back(polyline2);
 	objects.push_back(unknown1);
 	objects.push_back(unknown2);
+}
 
-	
+size_t getSizeOfObject(Shape* obj) { // get size of object in the array
+	if (Arch* a = dynamic_cast<Arch*>(obj); a != nullptr) {
+		return 9;
+	}
+	else if (Circle* c = dynamic_cast<Circle*>(obj); c != nullptr) {
+		return 5;
+	}
+	else if (Polygon* polygon = dynamic_cast<Polygon*>(obj); polygon != nullptr) {
+		size_t size = polygon->getPointCount() * 2 + 2;
+		return size;
+	}
+	else if (Polyline* polyline = dynamic_cast<Polyline*>(obj); polyline != nullptr) {
+		size_t size = polyline->getPointCount() * 2 + 2;
+		return size;
+	}
+	else if (Rect* rect = dynamic_cast<Rect*>(obj); rect != nullptr) {
+		return 10;
+	}
+	else if (UnknownType* ut = dynamic_cast<UnknownType*>(obj); ut != nullptr) {
+		size_t size = ut->getData().size() + 2;
+		return size;
+	}
+	return 0;
+}
+double* objectsToArr(std::vector<Shape*> objects) {
+	size_t size = 0;
+	for (int i = 0; i < objects.size(); ++i) {
+		size += getSizeOfObject(objects[i]);
+	}
+	size++; // for the first element 
+	double* ar = new double[size];
+	ar[0] = objects.size();
+	int i = 1; // counter
+	for (auto& obj : objects) {
+		if (Arch* a = dynamic_cast<Arch*>(obj); a != nullptr) {
+			ar[i++] = Objects::ARCH;
+			ar[i++] = 7; 
+			ar[i++] = a->getCenter().x();
+			ar[i++] = a->getCenter().y();
+			ar[i++] = a->getRadius();
+			ar[i++] = a->getAngles().first;
+			ar[i++] = a->getAngles().second;
+			ar[i++] = a->getControlPoint().x();
+			ar[i++] = a->getControlPoint().y();
+		}
+		else if (Circle* c = dynamic_cast<Circle*>(obj); c != nullptr) {
+			ar[i++] = Objects::CIRCLE;
+			ar[i++] = 3;
+			ar[i++] = c->getCenter().x();
+			ar[i++] = c->getCenter().y();
+			ar[i++] = c->getRadius();
+		}
+		else if (Polygon* polygon = dynamic_cast<Polygon*>(obj); polygon != nullptr) {
+			ar[i++] = Objects::POLYGON;
+			ar[i++] = polygon->getPointCount() * 2;
+			for (const auto& p : polygon->getPoints()) {
+				ar[i++] = p.x();
+				ar[i++] = p.y();
+			}
+		}
+		else if (Polyline* polyline = dynamic_cast<Polyline*>(obj); polyline != nullptr) {
+			ar[i++] = Objects::POLYLINE;
+			ar[i++] = polyline->getPointCount() * 2;
+			for (const auto& p : polyline->getPoints()) {
+				ar[i++] = p.x();
+				ar[i++] = p.y();
+			}
+		}
+		else if (Rect* rect = dynamic_cast<Rect*>(obj); rect != nullptr) {
+			ar[i++] = Objects::RECT;
+			ar[i++] = 8;
+			for (const auto& p : rect->getPoints()) {
+				ar[i++] = p.x();
+				ar[i++] = p.y();
+			}
+		}
+		else if (UnknownType* ut = dynamic_cast<UnknownType*>(obj); ut != nullptr) {
+			ar[i++] = Objects::UNKNOWN;
+			ar[i++] = ut->getData().size();
+			for (const auto& e : ut->getData()) {
+				ar[i++] = e;
+			}
+		}
+	}
+	return ar;
+}
+
+void writeReadFileMenu(DataProvider* dataProvider, std::vector<Shape*>& shapes, const std::vector<Shape*>& objects) {
+
+	bool read = false;
+
+	// size for new the array
+	size_t size = 0;
+	for (int i = 0; i < objects.size(); ++i) {
+		size += getSizeOfObject(objects[i]);
+	}
+	size++; // for the first element 
+
+	double* arr = objectsToArr(objects);
+
+	dataProvider->setArray(arr, size); // reset the array if the array has been changed before 
+
+	arr = nullptr; // dataProvider is respansible for the array now
+
+	// actually, we can get rid of the writing to file but I will leave it as it is just for testing
+
+	for (int i = 0; i < shapes.size(); ++i) {
+		delete shapes[i];
+	}
+	shapes.clear();
+	read = fileWriteRead(dataProvider, objects);
+
+	if (read) { // only if data is in the array
+		// reset the position if it has been changed
+		if (dataProvider->getC() != 0) {
+			dataProvider->setC(0);
+		}
+		convertArrayToObj(dataProvider, shapes);
+	}
+}
+
+// pass a pointer by reference to modify the pointer itself
+void setAnotherArrayMenu(DataProvider* dataProvider, std::vector<Shape*>& shapes, double*& gData) {
+	// Clean up
+	for (int i = 0; i < shapes.size(); ++i) {
+		delete shapes[i];
+	}
+	shapes.clear();
+
+	// use vector to get the size
+	std::vector<double> data = initArray();
+	size_t size = data.size();
+
+	if (gData == nullptr) {
+		// "gData = &data[0];" if we do like this, we will be in trouble when the vector goes out of scope
+		gData = new double[size];
+		for (int i = 0; i < size; ++i) {
+			gData[i] = data[i];
+		}
+	}
+
+	dataProvider->setArray(gData, size);
+
+	gData = nullptr; // Reset the pointer (the array is owned by dataProvider now)
+	convertArrayToObj(dataProvider, shapes);
+}
+
+void menu() {
+	system("cls");
+	std::cout << "Test the objects (1)" << std::endl;
+	std::cout << "Write to file and read from it (2)" << std::endl;
+	std::cout << "Print the objects (3)" << std::endl;
+	std::cout << "Draw the objects (4)" << std::endl;
+	std::cout << "Set another array (5)" << std::endl;
+	std::cout << "Draw with SFML (6)" << std::endl;
+	std::cout << "Exit (7)" << std::endl;
+}
+
+int _tmain(int argc, _TCHAR* argv[])
+{
+
+	std::vector<Shape*> objects;
+	initObjects(objects);
 	double* gData = nullptr;
-
 
 	WDraw drawer = WDraw();
 
-	size_t size = 139;
+	size_t sizeOfAr = 0;
+	for (int i = 0; i < objects.size(); ++i) {
+		sizeOfAr += getSizeOfObject(objects[i]);
+	}
+	sizeOfAr++; // +1 for the number of objects(the first element)
+
+	size_t size = sizeOfAr;
 	// Create singleton
 	DataProvider* dataProvider = DataProvider::GetInstance(size);
-	bool read = false;
 	std::vector<Shape*> shapes;
 	bool exit = false;
 	while (1) {
-
 		if (exit) {
 			break;
 		}
-
 		menu();
 		int answer = -1;
 		std::cin >> answer;
@@ -505,51 +660,17 @@ int _tmain(int argc, _TCHAR* argv[])
 		case 1:
 			test(objects);
 			break;
-		case 2: { // write to file and read
-			if (dataProvider->get_size() != 139) { // reset the size if the array has been changed before 
-				dataProvider->DestroyInstance(); // destroying (not using setArray) because we don't have an array at this point 
-				dataProvider = nullptr;          // we will get it from file
-				dataProvider = DataProvider::GetInstance(139); 
-
-				for (int i = 0; i < shapes.size(); ++i) {
-					delete shapes[i];
-				}
-				shapes.clear();
-			}
-			read = fileWriteRead(dataProvider, objects, 14);
-
-			if (read) { // only if data is in the array
-					// reset the position if it has been changed
-					if (dataProvider->getC() != 0) {
-						dataProvider->setC(0);
-					}
-					convertArrayToObj(dataProvider, shapes);
-			}
+		case 2: // write to file and read
+			writeReadFileMenu(dataProvider, shapes, objects);
 			break;
-		}
-		case 3: { // print
+		case 3: // print
 			printShapes(drawer, shapes);
-		}
-			  break;
-		case 4: { // draw
+			break;
+		case 4:  // draw
 			drawGraphics(drawer, shapes);
-		}
-			  break;
-		case 5: { // set another array
-			// Clean up
-			for (int i = 0; i < shapes.size(); ++i) {
-				delete shapes[i];
-			}
-			shapes.clear();
-
-			if (gData == nullptr) {
-				gData = initArray();
-			}
-			dataProvider->setArray(gData, 73);
-
-			gData = nullptr; // Reset the pointer (the array is owned by dataProvider now)
-			convertArrayToObj(dataProvider, shapes);
-		}
+			break;
+		case 5: // set another array
+			setAnotherArrayMenu(dataProvider, shapes, gData);
 			break;
 		case 6:
 			drawer.initGraphSFML(shapes);
@@ -563,7 +684,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 		if (!exit) { // skip when "exit"
 			char c;
-			std::cout << "Press any key to continue..." << std::endl;
+			std::cout << "Press any key and Enter to continue..." << std::endl;
 			std::cin >> c;
 		}
 	}
@@ -579,21 +700,8 @@ int _tmain(int argc, _TCHAR* argv[])
 		delete[] gData;
 		gData = nullptr;
 	}
-
-	delete rect1;
-	delete rect2;
-	delete circle1;
-	delete circle2;
-	delete arch1;
-	delete arch2;
-	delete arch3;
-	delete arch4;
-	delete polygon1;
-	delete polygon2;
-	delete polyline1;
-	delete polyline2;
-	delete unknown1;
-	delete unknown2;
-
+	for (auto& obj : objects) {
+		delete obj;
+	}
 	return 0;
 }

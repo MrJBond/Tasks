@@ -7,6 +7,8 @@
 #include <tchar.h>
 #include "input.h"
 
+#define THROW_ERR 23000000
+
 using namespace geometry;
 /*
 * 
@@ -644,12 +646,262 @@ void menu() {
 	std::cout << "Set another array (5)" << std::endl;
 	std::cout << "Draw with SFML (6)" << std::endl;
 	std::cout << "Enter shapes (7)" << std::endl;
-	std::cout << "Exit (8)" << std::endl;
+	std::cout << "Read shapes from file (8)" << std::endl;
+	std::cout << "Exit (9)" << std::endl;
 }
+/////////////////////////////////////////////////////////////////////////////////
+std::string readNthLine(const std::string& fileName, int n) {
+	std::ifstream file(fileName);  // Open the file
+	if (!file.is_open()) {
+		std::cerr << "Could not open the file " << fileName << std::endl;
+		return "";  // Return an empty string if the file can't be opened
+	}
 
+	std::string line;
+	int currentLine = 0;
+
+	// Iterate through the file line by line
+	while (std::getline(file, line)) {
+		++currentLine;
+		if (currentLine == n) {  // When the current line matches n
+			return line;  // Return the nth line
+		}
+	}
+
+	// If n exceeds the number of lines in the file, return an empty string
+	return "";
+}
+int countLinesInFile(const std::string& fileName) {
+	std::ifstream file(fileName);  // Open the file
+	if (!file.is_open()) {
+		std::cerr << "Could not open the file " << fileName << std::endl;
+		return -1;  // Return an error code
+	}
+
+	int lineCount = 0;
+	std::string line;
+	while (std::getline(file, line)) {
+		++lineCount;  // Count each line
+	}
+
+	file.close();  // Close the file
+	return lineCount;
+}
+std::vector<double> stringToNumbers(std::string s){
+	std::vector<double> vec;
+	std::istringstream iss(s);
+	double n;
+	// Extract numbers from the string
+	while (iss >> n) {
+		vec.push_back(n);
+	}
+	return vec;
+}
+Point2d getPoint(std::string point){
+	std::vector<double> p = stringToNumbers(point);
+
+	if (p[0] == THROW_ERR || p[1] == THROW_ERR) {
+		throw ReadError("Error with the point!");
+	}
+
+	return Point2d(p[0], p[1]);
+}
+void getRect(std::string fileName, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) {
+	// Read 4 lines with points
+	for (int j = 0; j < 4; ++j) {
+		std::string point = readNthLine(fileName, ++i);
+
+		Point2d p;
+		try {
+			p = getPoint(point);
+		}
+		catch (const ReadError& e) {
+			std::cout << e.what();
+			return; // can't create
+		}
+
+		// write points all 
+		points.push_back(p);
+	}
+	Rect* rect = new Rect();
+	rect->set(points[0], points[1], points[2], points[3]);
+	shapes.push_back(rect);
+}
+void getCircle(std::string fileName, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) {
+	std::string center_ = readNthLine(fileName, ++i);
+	Point2d center;
+
+	try {
+		center = getPoint(center_);
+	}
+	catch (const ReadError& e) {
+		std::cout << e.what();
+		return; // can't create
+	}
+
+
+	std::string s = readNthLine(fileName, ++i);
+	double radius = stringToNumbers(s)[0];
+
+	if (radius == THROW_ERR) {
+		std::cout << "Can't create!" << std::endl;
+		return;
+	}
+
+	Circle* c = new Circle();
+	c->set(center, radius);
+	shapes.push_back(c);
+}
+void getArch(std::string fileName, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) {
+	std::string center_ = readNthLine(fileName, ++i);
+	Point2d center;
+
+	try {
+		center = getPoint(center_);
+	}
+	catch (const ReadError& e) {
+		std::cout << e.what();
+		return; // can't create
+	}
+	std::string s = readNthLine(fileName, ++i);
+	double radius = stringToNumbers(s)[0];
+
+	if (radius == THROW_ERR) {
+		std::cout << "Can't create!" << std::endl;
+		return;
+	}
+
+	std::string angles_ = readNthLine("file.txt", ++i);
+	std::vector<double> angles = stringToNumbers(angles_);
+
+	if (angles[0] == THROW_ERR || angles[1] == THROW_ERR) {
+		std::cout << "Can't create!" << std::endl;
+		return;
+	}
+
+	std::string controlP_ = readNthLine(fileName, ++i);
+	Point2d controlP;
+
+	try {
+		controlP = getPoint(controlP_);
+	}
+	catch (const ReadError& e) {
+		std::cout << e.what();
+		return; // can't create
+	}
+
+	Arch* a = new Arch(center, radius, angles[0], angles[1], controlP);
+	shapes.push_back(a);
+}
+void getPolyline(std::string fileName, int numberNumbersToRead, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) {
+	// numbersToRead/2 for points
+	for (int j = 0; j < numberNumbersToRead / 2; ++j) {
+		std::string point = readNthLine(fileName, ++i);
+		// write points all 
+
+		Point2d p;
+		try {
+			p = getPoint(point);
+		}
+		catch (const ReadError& e) {
+			std::cout << e.what();
+			return; // can't create
+		}
+
+		points.push_back(p);
+	}
+	Polyline* polyline = new Polyline();
+	for (const auto& p : points) {
+		polyline->addPoint(p);
+	}
+	shapes.push_back(polyline);
+}
+void getPolygon(std::string fileName, int numberNumbersToRead, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) {
+	// numbersToRead/2 for points
+	for (int j = 0; j < numberNumbersToRead / 2; ++j) {
+		std::string point = readNthLine(fileName, ++i);
+		// write points all 
+
+		Point2d p;
+		try {
+			p = getPoint(point);
+		}
+		catch (const ReadError& e) {
+			std::cout << e.what();
+			return; // can't create
+		}
+
+		points.push_back(p);
+	}
+	Polygon* polygon = new Polygon();
+	for (const auto& p : points) {
+		polygon->addPoint(p);
+	}
+	shapes.push_back(polygon);
+}
+void getUnknown(std::vector<Shape*>& shapes, int& i) {
+	// only one line with numbers
+	std::string line = readNthLine("file.txt", ++i);
+	std::vector<double> v = stringToNumbers(line);
+	UnknownType* ut = new UnknownType();
+	for (int j = 0; j < v.size(); ++j) {
+		ut->addEl(v[j]);
+	}
+	shapes.push_back(ut);
+}
+void readShapesFromFile(std::vector<Shape*>& shapes, std::string fileName) {
+	cleanShapes(shapes);
+
+	int numberOfLines = countLinesInFile(fileName);
+
+	std::ifstream file(fileName);
+	std::string line;
+
+	std::string n = readNthLine(fileName, 1);
+	std::cout << "There are " << n << " objects in the file" << std::endl;
+
+	// from the second line
+	for (int i = 2; i < numberOfLines; ++i) {
+		std::string line = readNthLine(fileName, i);
+		int type = stringToNumbers(line)[0]; // in case the type is more than one digit long
+		std::string s = readNthLine(fileName, ++i);
+		int numberNumbersToRead = stringToNumbers(s)[0];
+
+
+		std::vector<Point2d> points;
+		switch (type) {
+			case Objects::RECT: {
+				getRect(fileName, shapes, points, i);
+			}
+			break;
+			case Objects::CIRCLE: {
+				getCircle(fileName, shapes, points, i);
+			}
+			break;
+			case Objects::ARCH: {
+				getArch(fileName, shapes, points, i);
+			}
+			break;
+			case Objects::POLYLINE: {
+				getPolyline(fileName, numberNumbersToRead, shapes, points, i);
+			}
+			break;
+			case Objects::POLYGON: {
+				getPolygon(fileName, numberNumbersToRead, shapes, points, i);
+			}
+			break;
+			default: {
+				getUnknown(shapes, i);
+			}
+			break;
+		}
+	}
+
+	file.close();
+}
+///////////////////////////////////////////////////////////////////////////////////
 int _tmain(int argc, _TCHAR* argv[])
 {
-
 	std::vector<Shape*> objects;
 	initObjects(objects);
 	double* gData = nullptr;
@@ -661,6 +913,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	// Create singleton
 	DataProvider* dataProvider = DataProvider::GetInstance(size);
 	std::vector<Shape*> shapes;
+
+
 	bool exit = false;
 	while (1) {
 		if (exit) {
@@ -700,6 +954,9 @@ int _tmain(int argc, _TCHAR* argv[])
 			getUserInput(dataProvider, shapes);
 			break;
 		case 8:
+			readShapesFromFile(shapes, "file.txt");
+			break;
+		case 9:
 			exit = true;
 			break;
 		default:

@@ -173,7 +173,7 @@ void DataProvider::writeToFile(Shape* obj, std::string fileToWrite) {
             f << p;
         }
     }
-    f << '\n';
+  //  f << '\n';
     f.close();
 }
 

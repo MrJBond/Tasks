@@ -16,6 +16,7 @@ namespace geometry {
 		// Helper function to calculate the angle of a point relative to the center
 		double calculateAngle(const Point2d& p);
 		double normalizeAngle(double angle);
+
 	public:
 		Arch() = default;
 		Arch(Point2d center, double r, double angle1, double angle2, Point2d point) :

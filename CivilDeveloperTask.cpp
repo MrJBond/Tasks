@@ -5,6 +5,7 @@
 #include "WDraw.h"
 #include "Exceptions.h"
 #include <tchar.h>
+#include "input.h"
 
 using namespace geometry;
 /*
@@ -462,7 +463,13 @@ void initObjects(std::vector<Shape*>& objects) {
 	objects.push_back(unknown1);
 	objects.push_back(unknown2);
 }
-
+void cleanShapes(std::vector<Shape*>& shapes) {
+	// Clean up
+	for (int i = 0; i < shapes.size(); ++i) {
+		delete shapes[i];
+	}
+	shapes.clear();
+}
 size_t getSizeOfObject(Shape* obj) { // get size of object in the array
 	if (Arch* a = dynamic_cast<Arch*>(obj); a != nullptr) {
 		return 9;
@@ -487,12 +494,18 @@ size_t getSizeOfObject(Shape* obj) { // get size of object in the array
 	}
 	return 0;
 }
-double* objectsToArr(std::vector<Shape*> objects) {
+size_t getSizeOfTheArr(const std::vector<Shape*>& objects) {
 	size_t size = 0;
 	for (int i = 0; i < objects.size(); ++i) {
 		size += getSizeOfObject(objects[i]);
 	}
 	size++; // for the first element 
+	return size;
+}
+double* objectsToArr(std::vector<Shape*> objects) {
+
+	size_t size = getSizeOfTheArr(objects);
+
 	double* ar = new double[size];
 	ar[0] = objects.size();
 	int i = 1; // counter
@@ -554,12 +567,7 @@ void writeReadFileMenu(DataProvider* dataProvider, std::vector<Shape*>& shapes, 
 
 	bool read = false;
 
-	// size for new the array
-	size_t size = 0;
-	for (int i = 0; i < objects.size(); ++i) {
-		size += getSizeOfObject(objects[i]);
-	}
-	size++; // for the first element 
+	size_t size = getSizeOfTheArr(objects);
 
 	double* arr = objectsToArr(objects);
 
@@ -569,10 +577,8 @@ void writeReadFileMenu(DataProvider* dataProvider, std::vector<Shape*>& shapes, 
 
 	// actually, we can get rid of the writing to file but I will leave it as it is just for testing
 
-	for (int i = 0; i < shapes.size(); ++i) {
-		delete shapes[i];
-	}
-	shapes.clear();
+	cleanShapes(shapes);
+
 	read = fileWriteRead(dataProvider, objects);
 
 	if (read) { // only if data is in the array
@@ -586,11 +592,8 @@ void writeReadFileMenu(DataProvider* dataProvider, std::vector<Shape*>& shapes, 
 
 // pass a pointer by reference to modify the pointer itself
 void setAnotherArrayMenu(DataProvider* dataProvider, std::vector<Shape*>& shapes, double*& gData) {
-	// Clean up
-	for (int i = 0; i < shapes.size(); ++i) {
-		delete shapes[i];
-	}
-	shapes.clear();
+
+	cleanShapes(shapes);
 
 	// use vector to get the size
 	std::vector<double> data = initArray();
@@ -609,7 +612,29 @@ void setAnotherArrayMenu(DataProvider* dataProvider, std::vector<Shape*>& shapes
 	gData = nullptr; // Reset the pointer (the array is owned by dataProvider now)
 	convertArrayToObj(dataProvider, shapes);
 }
+void getUserInput(DataProvider* dataProvider, std::vector<Shape*>& shapes) {
+	EnterData enter = EnterData();
+	std::vector<Shape*> data = enter.enterObjects();
 
+	// if shapes were entered
+	if (data.size() > 0) {
+
+		cleanShapes(shapes);
+
+		size_t size = getSizeOfTheArr(data);
+
+		double* arr = objectsToArr(data);
+
+		// give entered shapes to the dataProvider
+		dataProvider->setArray(arr, size); // reset the array
+		arr = nullptr;
+
+		// put them into shapes
+		for (const auto& shape : data) {
+			shapes.push_back(shape);
+		}
+	}
+}
 void menu() {
 	system("cls");
 	std::cout << "Test the objects (1)" << std::endl;
@@ -618,7 +643,8 @@ void menu() {
 	std::cout << "Draw the objects (4)" << std::endl;
 	std::cout << "Set another array (5)" << std::endl;
 	std::cout << "Draw with SFML (6)" << std::endl;
-	std::cout << "Exit (7)" << std::endl;
+	std::cout << "Enter shapes (7)" << std::endl;
+	std::cout << "Exit (8)" << std::endl;
 }
 
 int _tmain(int argc, _TCHAR* argv[])
@@ -630,13 +656,8 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	WDraw drawer = WDraw();
 
-	size_t sizeOfAr = 0;
-	for (int i = 0; i < objects.size(); ++i) {
-		sizeOfAr += getSizeOfObject(objects[i]);
-	}
-	sizeOfAr++; // +1 for the number of objects(the first element)
+	size_t size = getSizeOfTheArr(objects);
 
-	size_t size = sizeOfAr;
 	// Create singleton
 	DataProvider* dataProvider = DataProvider::GetInstance(size);
 	std::vector<Shape*> shapes;
@@ -676,6 +697,9 @@ int _tmain(int argc, _TCHAR* argv[])
 			drawer.initGraphSFML(shapes);
 			break;
 		case 7:
+			getUserInput(dataProvider, shapes);
+			break;
+		case 8:
 			exit = true;
 			break;
 		default:
@@ -690,9 +714,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 
 	// Clean up
-	for (int i = 0; i < shapes.size(); ++i) {
-		delete shapes[i];
-	}
+	cleanShapes(shapes);
 
 	DataProvider::DestroyInstance();
 	

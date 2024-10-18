@@ -55,7 +55,7 @@ void WDraw::drawOpenGl(Shape* obj, sf::RenderWindow* window) {
         int numSegments = 200;
         for (int i = 0; i <= numSegments; ++i) {
             // Linearly interpolate the angle between start and end
-            double theta = calcTheta(c,i, numSegments);
+            double theta = calcTheta(c, i, numSegments);
 
             std::pair<float, float> p = circlePoint(c, theta);
             float x = p.first;

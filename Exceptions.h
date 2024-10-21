@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 
+#define THROW_ERR 23000000
 
 class EndOfFile : public std::exception
 {

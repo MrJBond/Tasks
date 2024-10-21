@@ -9,9 +9,11 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include "Exceptions.h"
+#include <functional>
 
 
-#define THROW_ERR 23000000
+//#define THROW_ERR 23000000
 
 
 using namespace geometry; // to use the operators
@@ -68,6 +70,13 @@ public:
     void cleanShapes(std::vector<Shape*>& shapes);
     void readShapesFromFile(std::vector<Shape*>& shapes, std::string fileName);
     void createObjectsFromNumbers(std::vector<Shape*>& shapes, double n, int iteration);
+
+
+    // create universal methods to read data
+    double readNextNumFromFile(std::string fileName);
+    void readData(std::vector<Shape*>& shapes, std::string fileName = "", 
+        std::function<double(std::string)> getNextNum = nullptr);
+
 private:
     // Private constructor for Singleton
     DataProvider(long maxC) : maxC(maxC), c(0) {

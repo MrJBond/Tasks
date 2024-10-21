@@ -8,7 +8,7 @@
 #include "input.h"
 #include "internet.h"
 
-#define THROW_ERR 23000000
+
 
 using namespace geometry;
 /*
@@ -643,12 +643,13 @@ void menu() {
 	std::cout << "Enter shapes (7)" << std::endl;
 	std::cout << "Read shapes from file (8)" << std::endl;
 	std::cout << "Test data from the internet (9)" << std::endl;
-	std::cout << "Exit (10)" << std::endl;
+	std::cout << "Test universal method for the file (10)" << std::endl;
+	std::cout << "Exit (11)" << std::endl;
 }
 
 /*********************************************************************************************/
 
-
+/*
 void testDataGetting(DataProvider* dataProvider, std::vector<Shape*>& shapes) {
 
 	int countIter = 1;
@@ -669,7 +670,7 @@ void testDataGetting(DataProvider* dataProvider, std::vector<Shape*>& shapes) {
 	catch (const EndOfFile& e) {
 		std::cout << e.what();
 	}
-}
+}*/
 
 /***********************************************************************************************/
 
@@ -729,12 +730,20 @@ int _tmain(int argc, _TCHAR* argv[])
 		case 8:
 			dataProvider->readShapesFromFile(shapes, "file.txt");
 			break;
-		case 9: {
-			dataProvider->cleanShapes(shapes);
-			testDataGetting(dataProvider, shapes);
+		case 9: { // lambda to suit the function if we don't use a file
+			InternetRW::c = 0; // if it has been changed before
+			dataProvider->readData(shapes, "", [&](std::string) -> double {
+				return InternetRW::getDouble();
+			});
 		}
 			break;
-		case 10:
+		case 10: { // lambda to suit the function if we don't use a file
+			dataProvider->readData(shapes, "file.txt", [&](std::string name) -> double {
+				return dataProvider->readNextNumFromFile(name);
+				});
+		}
+			  break;
+		case 11:
 			exit = true;
 			break;
 		default:

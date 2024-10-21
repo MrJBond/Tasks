@@ -1,5 +1,4 @@
 #include "DataProvider.h"
-#include "Exceptions.h"
 
 
 /*
@@ -624,4 +623,53 @@ void DataProvider::createObjectsFromNumbers(std::vector<Shape*>& shapes, double 
 	obj.clear();
 	//numberNumsToExpect = 0; // it is 0 at this point
 	numberNumsToExpectMem = 0;
+}
+
+/****************************************************************************/
+
+void DataProvider::readData(std::vector<Shape*>& shapes, std::string fileName, 
+	std::function<double(std::string)> getNextNum) {
+
+	this->cleanShapes(shapes);
+	int countIter = 1;
+	try {
+		while (1) { // we will exit on the EndOfFile error
+
+			double num = getNextNum(fileName);
+
+			try {
+				this->createObjectsFromNumbers(shapes, num, countIter);
+			}
+			catch (const ReadError& e) {
+				std::cout << e.what();
+			}
+			countIter++;
+		}
+	}
+	catch (const EndOfFile& e) {
+		std::cout << e.what();
+	}
+}
+
+double DataProvider::readNextNumFromFile(std::string fileName) {
+
+	std::ifstream file(fileName);
+	static std::streampos filePos;    // To store the current position in the file
+	if (!file.is_open()) {
+		std::cerr << "Could not open the file " << fileName << std::endl;
+		return -1;
+	}
+	file.seekg(filePos);  // Seek to the last read position
+
+	double num = 0.;
+	if (file >> num) {
+		filePos = file.tellg();  // Update the position for the next read
+		file.close();  // Close the file after reading
+		return num; // Return the next number if successfully read
+	}
+	else {
+		file.close();  // Close the file before throwing
+		filePos = 0; // move to the beginning for the next call of the menu
+		throw EndOfFile();
+	}
 }

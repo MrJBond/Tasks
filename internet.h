@@ -83,13 +83,12 @@ namespace InternetRW
 		int i = (int)data[c++];
 		return i;
 	}
-
+    
 	double getDouble() {
 		checkC();
 		double d = data[c++];
 		return d;
 	}
-
 
     void sendDouble() {};
 }

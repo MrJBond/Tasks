@@ -65,6 +65,9 @@ public:
         this->c = c;
     }
 
+    void cleanShapes(std::vector<Shape*>& shapes);
+    void readShapesFromFile(std::vector<Shape*>& shapes, std::string fileName);
+    void createObjectsFromNumbers(std::vector<Shape*>& shapes, double n, int iteration);
 private:
     // Private constructor for Singleton
     DataProvider(long maxC) : maxC(maxC), c(0) {
@@ -78,4 +81,17 @@ private:
     long maxC = 0; 
 
     double *gData = nullptr;
+
+    // Read any file
+    std::string readNthLine(std::ifstream& file, int n);
+    int countLinesInFile(std::ifstream& file);
+    std::vector<double> stringToNumbers(std::string s);
+    Point2d getPoint(std::string point);
+    void getRect(std::ifstream& file, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i);
+    void getCircle(std::ifstream& file, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i);
+    void getArch(std::ifstream& file, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i);
+    void getPolyline(std::ifstream& file, int numberNumbersToRead, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i);
+    void getPolygon(std::ifstream& file, int numberNumbersToRead, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i);
+    void getUnknown(std::ifstream& file, std::vector<Shape*>& shapes, int& i);
+
 };

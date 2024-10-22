@@ -12,22 +12,22 @@
 #include "Exceptions.h"
 #include <functional>
 
-using namespace geometry; // to use the operators
+using namespace geometry;
 
 // I wanna make it a Singleton
 class DataProvider
 {
 public:
 
-    virtual ~DataProvider() {
+    ~DataProvider() {
         if (gData != nullptr) {
             delete[] gData;
             gData = nullptr;
         }
     }
 
-    virtual int rdInt(); // read int
-    virtual double rdDouble(); // read double
+    int rdInt(); // read int
+    double rdDouble(); // read double
     void writeToFile(Shape* obj, std::string fileToWrite);
     void readFromFile(std::string fileName);
 
@@ -82,8 +82,8 @@ private:
 
     void checkC();
 
-    long c = 0; // curPos
-    long maxC = 0; 
+    long c = 0; // curPos in the array
+    long maxC = 0; // array size
 
     double *gData = nullptr;
 

@@ -89,6 +89,4 @@ namespace InternetRW
 		double d = data[c++];
 		return d;
 	}
-
-    void sendDouble() {};
 }

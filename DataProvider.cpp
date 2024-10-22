@@ -155,8 +155,11 @@ void DataProvider::createShape(std::vector<double> data, std::vector<Shape*>& sh
 	}
 	break;
 	}
-	// add the constructed object
-	shapes.push_back(object);
+	if (object->isValid())
+		// add the constructed object
+		shapes.push_back(object);
+	else
+		std::cerr << "The object is invalid!" << std::endl;
 }
 
 
@@ -175,7 +178,7 @@ void DataProvider::writeToFile(Shape* obj, std::string fileToWrite) {
         Point2d center = a->getCenter();
         double radius = a->getRadius();
         f << Objects::ARCH << '\n';
-        f << 7 << '\n'; // количество чисел
+        f << 7 << '\n'; // number of numbers
         f << center;
         f << radius << '\n';
         f << a->getAngles();
@@ -185,14 +188,14 @@ void DataProvider::writeToFile(Shape* obj, std::string fileToWrite) {
         Point2d center = c->getCenter();
         double radius = c->getRadius();
         f << Objects::CIRCLE << '\n';
-        f << 3 << '\n'; // количество чисел
+        f << 3 << '\n'; // number of numbers
         f << center;
         f << radius << '\n';
     }
     else if (UnknownType* ut = dynamic_cast<UnknownType*>(obj); ut != nullptr) {
         std::vector<double> data = ut->getData();
         f << Objects::UNKNOWN << '\n';
-        f << data.size() << '\n'; // количество чисел
+        f << data.size() << '\n'; // number of numbers
         for (const auto& e : data) {
             f << e << " ";
         }
@@ -214,7 +217,7 @@ void DataProvider::writeToFile(Shape* obj, std::string fileToWrite) {
         }
         
         f << type << '\n';
-        f << points.size()*2 << '\n'; // количество чисел
+        f << points.size()*2 << '\n'; // number of numbers
 
         for (const auto& p : points) {
             f << p;
@@ -343,7 +346,6 @@ Point2d DataProvider::getPoint(std::string point) {
 	if (p[0] == THROW_ERR || p[1] == THROW_ERR) {
 		throw ReadError("Error with the point!");
 	}
-
 	return Point2d(p[0], p[1]);
 }
 void DataProvider::getRect(std::ifstream& file, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) {
@@ -365,7 +367,11 @@ void DataProvider::getRect(std::ifstream& file, std::vector<Shape*>& shapes, std
 	}
 	Rect* rect = new Rect();
 	rect->set(points[0], points[1], points[2], points[3]);
-	shapes.push_back(rect);
+
+	if (rect->isValid())
+		shapes.push_back(rect);
+	else
+		std::cerr << "The Rect is Invalid!" << std::endl;
 }
 void DataProvider::getCircle(std::ifstream& file, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) {
 	std::string center_ = readNthLine(file, ++i);
@@ -388,7 +394,11 @@ void DataProvider::getCircle(std::ifstream& file, std::vector<Shape*>& shapes, s
 
 	Circle* c = new Circle();
 	c->set(center, radius);
-	shapes.push_back(c);
+
+	if (c->isValid())
+		shapes.push_back(c);
+	else
+		std::cerr << "The circle is invalid!" << std::endl;
 }
 void DataProvider::getArch(std::ifstream& file, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) {
 	std::string center_ = readNthLine(file, ++i);
@@ -429,7 +439,11 @@ void DataProvider::getArch(std::ifstream& file, std::vector<Shape*>& shapes, std
 	}
 
 	Arch* a = new Arch(center, radius, angles[0], angles[1], controlP);
-	shapes.push_back(a);
+
+	if (a->isValid())
+		shapes.push_back(a);
+	else
+		std::cerr << "The Arch is invalid!" << std::endl;
 }
 void DataProvider::getPolyline(std::ifstream& file, int numberNumbersToRead, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) {
 	// numbersToRead/2 for points
@@ -452,7 +466,10 @@ void DataProvider::getPolyline(std::ifstream& file, int numberNumbersToRead, std
 	for (const auto& p : points) {
 		polyline->addPoint(p);
 	}
-	shapes.push_back(polyline);
+	if (polyline->isValid())
+		shapes.push_back(polyline);
+	else
+		std::cerr << "The Polyline is invalid!" << std::endl;
 }
 void DataProvider::getPolygon(std::ifstream& file, int numberNumbersToRead, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) {
 	// numbersToRead/2 for points
@@ -475,7 +492,10 @@ void DataProvider::getPolygon(std::ifstream& file, int numberNumbersToRead, std:
 	for (const auto& p : points) {
 		polygon->addPoint(p);
 	}
-	shapes.push_back(polygon);
+	if (polygon->isValid())
+		shapes.push_back(polygon);
+	else
+		std::cerr << "The Polygon is invalid!" << std::endl;
 }
 void DataProvider::getUnknown(std::ifstream& file, std::vector<Shape*>& shapes, int& i) {
 	// only one line with numbers
@@ -634,6 +654,12 @@ void DataProvider::readData(std::vector<Shape*>& shapes, std::string fileName,
 	}
 }
 double DataProvider::readNextNumFromFile(std::string fileName) {
+
+	// Check if file name is valid (ends with .txt)
+	if (fileName.length() < 5 || fileName.substr(fileName.length() - 4) != ".txt") {
+		std::cerr << "Invalid file name: " << fileName << std::endl;
+		throw EndOfFile();
+	}
 
 	std::ifstream file(fileName);
 	static std::streampos filePos;    // To store the current position in the file

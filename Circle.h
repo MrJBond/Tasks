@@ -13,7 +13,7 @@ namespace geometry {
         Circle(Point2d center, double r) :center(center) {
             this->set(center, r);
         }
-        ~Circle() = default;
+        virtual ~Circle() = default;
 
         double getRadius() const {
             return r;

@@ -10,7 +10,7 @@ namespace geometry {
 
     public:
         Polyline() = default;
-        ~Polyline() = default;
+        virtual ~Polyline() = default;
 
         std::vector<Point2d> getPoints() override;
         void addPoint(const Point2d& point);

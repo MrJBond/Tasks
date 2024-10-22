@@ -64,14 +64,7 @@ double gData[] = {
     10,
     90,91,92,93,94,95,96,97,98,99
 };
-
-DataProvider::DataProvider(void) : c(0), maxC(sizeof(gData) / sizeof(gData[0]))
-{
-}
-
-DataProvider::~DataProvider(void)
-{
-}*/
+*/
 
 // Static methods should be defined outside the class
 DataProvider* DataProvider::dataProvider = nullptr;
@@ -109,6 +102,61 @@ void DataProvider::checkC() {
     if (c == maxC) {
         throw EndOfFile();
     }
+}
+
+
+void DataProvider::createShape(std::vector<double> data, std::vector<Shape*>& shapes, int type) {
+	Shape* object = nullptr;
+	switch (type) {
+	case Objects::RECT: {
+		object = new Rect();
+		((Rect*)object)->set(Point2d(data[0], data[1]),
+			Point2d(data[2], data[3]),
+			Point2d(data[4], data[5]),
+			Point2d(data[6], data[7])
+		);
+	}
+	break;
+	case Objects::CIRCLE: {
+		object = new Circle();
+		((Circle*)object)->set(Point2d(data[0], data[1]),
+			data[2]
+		);
+	}
+	break;
+	case Objects::ARCH: {
+		object = new Arch();
+		((Arch*)object)->set(Point2d(data[0], data[1]),
+			data[2]
+		);
+		((Arch*)object)->setAngles(data[3], data[4]);
+		((Arch*)object)->setPoint(Point2d(data[5], data[6]));
+	}
+	break;
+	case Objects::POLYGON: {
+		object = new Polygon();
+		for (int i = 1; i < data.size(); i += 2) {
+			((Polygon*)object)->addPoint(Point2d(data[i - 1], data[i]));
+		}
+	}
+	break;
+	case Objects::POLYLINE: {
+		object = new Polyline();
+		for (int i = 1; i < data.size(); i += 2) {
+			((Polyline*)object)->addPoint(Point2d(data[i - 1], data[i]));
+		}
+	}
+	break;
+	default: {
+		object = new UnknownType();
+		for (const auto& e : data) {
+			((UnknownType*)object)->addEl(e);
+		}
+	}
+	break;
+	}
+	// add the constructed object
+	shapes.push_back(object);
 }
 
 
@@ -172,7 +220,6 @@ void DataProvider::writeToFile(Shape* obj, std::string fileToWrite) {
             f << p;
         }
     }
-  //  f << '\n';
     f.close();
 }
 
@@ -498,147 +545,83 @@ void DataProvider::readShapesFromFile(std::vector<Shape*>& shapes, std::string f
 				Get data from any source
 ***************************************************************/
 
-// use double instead of string for general case 
-void DataProvider::createObjectsFromNumbers(std::vector<Shape*>& shapes, double n, int iteration) {
+/************************************************************
+					With struct
+*************************************************************/
 
-	static int numberObjs;
-	static double type; // double to store NaN correctly
-	static int numberNumsToExpect;
-	static int numberNumsToExpectMem;
-	static std::vector<double> obj;
+// use double instead of string for general case 
+void DataProvider::createObjectsFromNumbers(std::vector<Shape*>& shapes, double n, int iteration, ReceivedObj& obj) {
 
 	if (iteration == 1) { // assign them only once
-		type = std::nan("1");
-
-		numberNumsToExpect = 0;
-		numberNumsToExpectMem = 0; /* to memorize the numberNumsToExpect(we will need it in the switch)
+		obj.type = -1;
+		obj.numberNumsToExpect = 0;
+		obj.numberNumsToExpectMem = 0; /* to memorize the numberNumsToExpect(we will need it in the switch)
 		because the  numberNumsToExpect will have been decreased by that moment*/
-
-		numberObjs = n;
-		if (numberObjs == THROW_ERR) {
+		obj.numberObjs = n;
+		if (obj.numberObjs == THROW_ERR) {
 			std::cerr << "The number of objects is broken!" << std::endl;
 			// we can go and check the type
 		}
 		else
-			std::cout << "There are " << numberObjs << " objects in the source" << std::endl;
+			std::cout << "There are " << obj.numberObjs << " objects in the source" << std::endl;
 		return;
 	}
-
 	// after some iterations
-	if (std::isnan(type)) {
-		type = n; // if type is THROW_ERR, it will return the default type
+	if (obj.type == -1) {
+		obj.type = n; // if type is THROW_ERR, it will return the default type
 		return;
 	}
+	if (obj.type != -1 && obj.numberNumsToExpect == 0) {
+		obj.numberNumsToExpect = n;
+		obj.numberNumsToExpectMem = n;
 
-	if (!isnan(type) && numberNumsToExpect == 0) {
-		numberNumsToExpect = n;
-		numberNumsToExpectMem = n;
-
-		if (numberNumsToExpect == THROW_ERR) {
+		if (obj.numberNumsToExpect == THROW_ERR) {
 			// we don't know how many numbers to wait for
 			// some objects may be in the shapes vector at this moment
 			std::string err = "The number of numbers to wait for is broken!";
 			std::string iter = "\nThe iteration number is " + std::to_string(iteration);
 			throw ReadError(err + iter);
 		}
-
 		return;
 	}
-
 	// check n before pushing
 	if (n == THROW_ERR) {
 		// if n is broken, create the unknown type
-		type = INT_MIN;
+		obj.type = INT_MIN;
 	}
-
 	// Accumulate object data (one number per call)
-	obj.push_back(n);
-	numberNumsToExpect--;  // Decrease the count of expected numbers
-	if (numberNumsToExpect != 0) { // if numbers are still there
+	obj.obj.push_back(n);
+	obj.numberNumsToExpect--;  // Decrease the count of expected numbers
+	if (obj.numberNumsToExpect != 0) { // if numbers are still there
 		return;
 	}
-
 	// Once all expected numbers are collected, create the object
-	if (obj.size() != numberNumsToExpectMem) { // in case something has gone wrong
+	if (obj.obj.size() != obj.numberNumsToExpectMem) { // in case something has gone wrong
 		std::string err = "Wrong number of numbers for the object!";
 		std::string iter = "\nThe iteration number is " + std::to_string(iteration);
 		throw ReadError(err + iter);
 	}
-
-	Shape* object = nullptr;
-	switch ((int)type) {
-	case Objects::RECT: {
-		object = new Rect();
-		((Rect*)object)->set(Point2d(obj[0], obj[1]),
-			Point2d(obj[2], obj[3]),
-			Point2d(obj[4], obj[5]),
-			Point2d(obj[6], obj[7])
-		);
-	}
-	break;
-	case Objects::CIRCLE: {
-		object = new Circle();
-		((Circle*)object)->set(Point2d(obj[0], obj[1]),
-			obj[2]
-		);
-	}
-	break;
-	case Objects::ARCH: {
-		object = new Arch();
-		((Arch*)object)->set(Point2d(obj[0], obj[1]),
-			obj[2]
-		);
-		((Arch*)object)->setAngles(obj[3], obj[4]);
-		((Arch*)object)->setPoint(Point2d(obj[5], obj[6]));
-	}
-	break;
-	case Objects::POLYGON: {
-		object = new Polygon();
-		for (int i = 1; i < obj.size(); i+=2) {
-			((Polygon*)object)->addPoint(Point2d(obj[i - 1], obj[i]));
-		}
-	}
-	break;
-	case Objects::POLYLINE: {
-		object = new Polyline();
-		for (int i = 1; i < obj.size(); i+=2) {
-			((Polyline*)object)->addPoint(Point2d(obj[i - 1], obj[i]));
-		}
-	}
-	break;
-	default: {
-		object = new UnknownType();
-		for (const auto& e : obj) {
-			((UnknownType*)object)->addEl(e);
-		}
-	}
-	 break;
-	}
-
-	// add the constructed object
-	shapes.push_back(object);
+	this->createShape(obj.obj, shapes, (int)obj.type);
 
 	// reset vars
-	type = std::nan("1");
-	obj.clear();
+	obj.type = -1;
+	obj.obj.clear();
 	//numberNumsToExpect = 0; // it is 0 at this point
-	numberNumsToExpectMem = 0;
+	obj.numberNumsToExpectMem = 0;
 }
 
 /****************************************************************************/
 
 void DataProvider::readData(std::vector<Shape*>& shapes, std::string fileName, 
 	std::function<double(std::string)> getNextNum) {
-
 	this->cleanShapes(shapes);
 	int countIter = 1;
+	ReceivedObj object;
 	try {
 		while (1) { // we will exit on the EndOfFile error
-
 			double num = getNextNum(fileName);
-
 			try {
-				this->createObjectsFromNumbers(shapes, num, countIter);
+				this->createObjectsFromNumbers(shapes, num, countIter, object);
 			}
 			catch (const ReadError& e) {
 				std::cout << e.what();
@@ -650,7 +633,6 @@ void DataProvider::readData(std::vector<Shape*>& shapes, std::string fileName,
 		std::cout << e.what();
 	}
 }
-
 double DataProvider::readNextNumFromFile(std::string fileName) {
 
 	std::ifstream file(fileName);

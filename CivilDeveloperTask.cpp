@@ -647,33 +647,6 @@ void menu() {
 	std::cout << "Exit (11)" << std::endl;
 }
 
-/*********************************************************************************************/
-
-/*
-void testDataGetting(DataProvider* dataProvider, std::vector<Shape*>& shapes) {
-
-	int countIter = 1;
-	try {
-		while (1) { // we will exit on the EndOfFile error
-
-			double num = InternetRW::getDouble();
-
-			try {
-				dataProvider->createObjectsFromNumbers(shapes, num, countIter);
-			}
-			catch (const ReadError& e) {
-				std::cout << e.what();
-			}
-			countIter++;
-		}
-	}
-	catch (const EndOfFile& e) {
-		std::cout << e.what();
-	}
-}*/
-
-/***********************************************************************************************/
-
 int _tmain(int argc, _TCHAR* argv[])
 {
 	std::vector<Shape*> objects;

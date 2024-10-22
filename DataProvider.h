@@ -12,10 +12,6 @@
 #include "Exceptions.h"
 #include <functional>
 
-
-//#define THROW_ERR 23000000
-
-
 using namespace geometry; // to use the operators
 
 // I wanna make it a Singleton
@@ -69,8 +65,8 @@ public:
 
     void cleanShapes(std::vector<Shape*>& shapes);
     void readShapesFromFile(std::vector<Shape*>& shapes, std::string fileName);
-    void createObjectsFromNumbers(std::vector<Shape*>& shapes, double n, int iteration);
 
+    void createShape(std::vector<double> data, std::vector<Shape*>& shapes, int type);
 
     // create universal methods to read data
     double readNextNumFromFile(std::string fileName);
@@ -102,5 +98,16 @@ private:
     void getPolyline(std::ifstream& file, int numberNumbersToRead, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i);
     void getPolygon(std::ifstream& file, int numberNumbersToRead, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i);
     void getUnknown(std::ifstream& file, std::vector<Shape*>& shapes, int& i);
+
+    // the struct to store data for the createObjectsFromNumbers function
+    struct ReceivedObj {
+        int numberObjs;
+        int type;
+        int numberNumsToExpect;
+        int numberNumsToExpectMem;
+        std::vector<double> obj;
+    };
+
+    void createObjectsFromNumbers(std::vector<Shape*>& shapes, double n, int iteration, ReceivedObj& obj);
 
 };

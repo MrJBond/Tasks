@@ -79,9 +79,9 @@ DataProvider* DataProvider::GetInstance(long maxC) {
 
 int DataProvider::rdInt() {
     checkC();
-    int i = (int)gData[c++];
+    int i = (int)m_gData[m_c++];
     if (i == THROW_ERR) {
-        if (c == 1) { // the number of objects is wrong
+        if (m_c == 1) { // the number of objects is wrong
             throw ReadError("The number of objects is wrong");
         }else
             throw ReadError("Reading error!");
@@ -91,7 +91,7 @@ int DataProvider::rdInt() {
 
 double DataProvider::rdDouble() {
     checkC();
-    double d = gData[c++];
+    double d = m_gData[m_c++];
     if (d == THROW_ERR) {
         throw ReadError("Reading error!");
     }
@@ -99,7 +99,7 @@ double DataProvider::rdDouble() {
 }
 
 void DataProvider::checkC() {
-    if (c == maxC) {
+    if (m_c == m_maxC) {
         throw EndOfFile();
     }
 }
@@ -110,7 +110,7 @@ void DataProvider::createShape(std::vector<double> data, std::vector<Shape*>& sh
 	switch (type) {
 	case Objects::RECT: {
 		object = new Rect();
-		((Rect*)object)->set(Point2d(data[0], data[1]),
+		(static_cast<Rect*>(object))->set(Point2d(data[0], data[1]),
 			Point2d(data[2], data[3]),
 			Point2d(data[4], data[5]),
 			Point2d(data[6], data[7])
@@ -119,38 +119,38 @@ void DataProvider::createShape(std::vector<double> data, std::vector<Shape*>& sh
 	break;
 	case Objects::CIRCLE: {
 		object = new Circle();
-		((Circle*)object)->set(Point2d(data[0], data[1]),
+		(static_cast<Circle*>(object))->set(Point2d(data[0], data[1]),
 			data[2]
 		);
 	}
 	break;
 	case Objects::ARCH: {
 		object = new Arch();
-		((Arch*)object)->set(Point2d(data[0], data[1]),
+		(static_cast<Arch*>(object))->set(Point2d(data[0], data[1]),
 			data[2]
 		);
-		((Arch*)object)->setAngles(data[3], data[4]);
-		((Arch*)object)->setPoint(Point2d(data[5], data[6]));
+		(static_cast<Arch*>(object))->setAngles(data[3], data[4]);
+		(static_cast<Arch*>(object))->setPoint(Point2d(data[5], data[6]));
 	}
 	break;
 	case Objects::POLYGON: {
 		object = new Polygon();
 		for (int i = 1; i < data.size(); i += 2) {
-			((Polygon*)object)->addPoint(Point2d(data[i - 1], data[i]));
+			(static_cast<Polygon*>(object))->addPoint(Point2d(data[i - 1], data[i]));
 		}
 	}
 	break;
 	case Objects::POLYLINE: {
 		object = new Polyline();
 		for (int i = 1; i < data.size(); i += 2) {
-			((Polyline*)object)->addPoint(Point2d(data[i - 1], data[i]));
+			(static_cast<Polyline*>(object))->addPoint(Point2d(data[i - 1], data[i]));
 		}
 	}
 	break;
 	default: {
 		object = new UnknownType();
 		for (const auto& e : data) {
-			((UnknownType*)object)->addEl(e);
+			(static_cast<UnknownType*>(object))->addEl(e);
 		}
 	}
 	break;
@@ -205,17 +205,7 @@ void DataProvider::writeToFile(Shape* obj, std::string fileToWrite) {
 
         std::vector<Point2d> points = obj->getPoints();
 
-        int type = INT_MAX; // default
-        if (Rect* rect = dynamic_cast<Rect*>(obj); rect != nullptr) {
-            type = Objects::RECT;
-        }
-        else if (Polygon* polygon = dynamic_cast<Polygon*>(obj); polygon != nullptr) { // Polygon before Polyline otherwise it would cast Polygon obj to Polyline
-            type = Objects::POLYGON;
-        }
-        else if (Polyline* polyline = dynamic_cast<Polyline*>(obj); polyline != nullptr) { 
-            type = Objects::POLYLINE;
-        }
-        
+		int type = obj->getType();
         f << type << '\n';
         f << points.size()*2 << '\n'; // number of numbers
 
@@ -246,18 +236,6 @@ void DataProvider::readFromFile(std::string fileName) {
     std::string line;
     std::vector<double> v; // using vector to check the size then 
 
-    auto stringToNumbers = [&](std::string s) -> std::vector<double> {
-        std::vector<double> vec;
-        std::istringstream iss(s);
-        double n;
-        // Extract numbers from the string
-        while (iss >> n) {
-            vec.push_back(n);
-        }
-        return vec;
-        };
-
-
     for (std::string line; std::getline(f, line); )
     {
         // get numbers from the line
@@ -269,9 +247,9 @@ void DataProvider::readFromFile(std::string fileName) {
         }
     }
    
-    if (v.size() == maxC) { // if the number of elements is correct
-        for (int i = 0; i < maxC; ++i) {
-            gData[i] = v[i]; // write data
+    if (v.size() == m_maxC) { // if the number of elements is correct
+        for (int i = 0; i < m_maxC; ++i) {
+			m_gData[i] = v[i]; // write data
         }
     }
     else {
@@ -291,7 +269,7 @@ void DataProvider::cleanShapes(std::vector<Shape*>& shapes) {
             Read any file and write the data to the shapes vector
 ****************************************************************************************/
 
-std::string DataProvider::readNthLine(std::ifstream& file, int n) {
+std::string DataProvider::readNthLine(std::ifstream& file, int n) const {
 
 	// Reset file stream position to the beginning and clear any error flags
 	file.clear();  // Clear any error flags (like EOF flag)
@@ -314,7 +292,7 @@ std::string DataProvider::readNthLine(std::ifstream& file, int n) {
 	// If n exceeds the number of lines in the file, return an empty string
 	return "";
 }
-int DataProvider::countLinesInFile(std::ifstream& file) {
+int DataProvider::countLinesInFile(std::ifstream& file) const {
 	// Reset file stream position to the beginning and clear any error flags
 	file.clear();  // Clear any error flags (like EOF flag)
 	file.seekg(0, std::ios::beg); // Go back to the start of the file
@@ -330,7 +308,7 @@ int DataProvider::countLinesInFile(std::ifstream& file) {
 	}
 	return lineCount;
 }
-std::vector<double> DataProvider::stringToNumbers(std::string s) {
+std::vector<double> DataProvider::stringToNumbers(std::string s) const {
 	std::vector<double> vec;
 	std::istringstream iss(s);
 	double n;
@@ -340,7 +318,7 @@ std::vector<double> DataProvider::stringToNumbers(std::string s) {
 	}
 	return vec;
 }
-Point2d DataProvider::getPoint(std::string point) {
+Point2d DataProvider::getPoint(std::string point) const {
 	std::vector<double> p = stringToNumbers(point);
 
 	if (p[0] == THROW_ERR || p[1] == THROW_ERR) {
@@ -348,7 +326,7 @@ Point2d DataProvider::getPoint(std::string point) {
 	}
 	return Point2d(p[0], p[1]);
 }
-void DataProvider::getRect(std::ifstream& file, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) {
+void DataProvider::getRect(std::ifstream& file, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) const {
 	// Read 4 lines with points
 	for (int j = 0; j < 4; ++j) {
 		std::string point = readNthLine(file, ++i);
@@ -373,7 +351,7 @@ void DataProvider::getRect(std::ifstream& file, std::vector<Shape*>& shapes, std
 	else
 		std::cerr << "The Rect is Invalid!" << std::endl;
 }
-void DataProvider::getCircle(std::ifstream& file, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) {
+void DataProvider::getCircle(std::ifstream& file, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) const {
 	std::string center_ = readNthLine(file, ++i);
 	Point2d center;
 
@@ -400,7 +378,7 @@ void DataProvider::getCircle(std::ifstream& file, std::vector<Shape*>& shapes, s
 	else
 		std::cerr << "The circle is invalid!" << std::endl;
 }
-void DataProvider::getArch(std::ifstream& file, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) {
+void DataProvider::getArch(std::ifstream& file, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) const {
 	std::string center_ = readNthLine(file, ++i);
 	Point2d center;
 
@@ -445,7 +423,7 @@ void DataProvider::getArch(std::ifstream& file, std::vector<Shape*>& shapes, std
 	else
 		std::cerr << "The Arch is invalid!" << std::endl;
 }
-void DataProvider::getPolyline(std::ifstream& file, int numberNumbersToRead, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) {
+void DataProvider::getPolyline(std::ifstream& file, int numberNumbersToRead, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) const {
 	// numbersToRead/2 for points
 	for (int j = 0; j < numberNumbersToRead / 2; ++j) {
 		std::string point = readNthLine(file, ++i);
@@ -471,7 +449,7 @@ void DataProvider::getPolyline(std::ifstream& file, int numberNumbersToRead, std
 	else
 		std::cerr << "The Polyline is invalid!" << std::endl;
 }
-void DataProvider::getPolygon(std::ifstream& file, int numberNumbersToRead, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) {
+void DataProvider::getPolygon(std::ifstream& file, int numberNumbersToRead, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) const {
 	// numbersToRead/2 for points
 	for (int j = 0; j < numberNumbersToRead / 2; ++j) {
 		std::string point = readNthLine(file, ++i);
@@ -497,7 +475,7 @@ void DataProvider::getPolygon(std::ifstream& file, int numberNumbersToRead, std:
 	else
 		std::cerr << "The Polygon is invalid!" << std::endl;
 }
-void DataProvider::getUnknown(std::ifstream& file, std::vector<Shape*>& shapes, int& i) {
+void DataProvider::getUnknown(std::ifstream& file, std::vector<Shape*>& shapes, int& i) const {
 	// only one line with numbers
 	std::string line = readNthLine(file, ++i);
 	std::vector<double> v = stringToNumbers(line);
@@ -621,7 +599,7 @@ void DataProvider::createObjectsFromNumbers(std::vector<Shape*>& shapes, double 
 		std::string iter = "\nThe iteration number is " + std::to_string(iteration);
 		throw ReadError(err + iter);
 	}
-	this->createShape(obj.obj, shapes, (int)obj.type);
+	createShape(obj.obj, shapes, (int)obj.type);
 
 	// reset vars
 	obj.type = -1;
@@ -641,7 +619,7 @@ void DataProvider::readData(std::vector<Shape*>& shapes, std::string fileName,
 		while (1) { // we will exit on the EndOfFile error
 			double num = getNextNum(fileName);
 			try {
-				this->createObjectsFromNumbers(shapes, num, countIter, object);
+				createObjectsFromNumbers(shapes, num, countIter, object);
 			}
 			catch (const ReadError& e) {
 				std::cout << e.what();

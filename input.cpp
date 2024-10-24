@@ -23,10 +23,10 @@ Point2d EnterData::enterOnePoint(size_t n) {
 	return Point2d(x,y);
 }
 std::vector<Point2d> EnterData::enterAllPoints(size_t n) {
-	std::vector<Point2d> points;
+	std::vector<Point2d> points(n);
 	size_t i = 1;
 	while (i < n+1) {
-		points.push_back(enterOnePoint(i));
+		points[i-1] = enterOnePoint(i);
 		i++;
 	}
 	return points;

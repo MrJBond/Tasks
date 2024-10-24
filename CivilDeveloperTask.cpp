@@ -84,7 +84,7 @@ void convertArrayToObj(DataProvider* dataProvider, std::vector<Shape*>& shapes) 
 
 			// read n doubles (for the object)
 			int i = 0;
-			std::vector<double> nums;
+			std::vector<double> nums(n);
 			while (i < n) {
 
 				double number = DBL_MAX; // default in case of an error
@@ -97,8 +97,7 @@ void convertArrayToObj(DataProvider* dataProvider, std::vector<Shape*>& shapes) 
 					// so create an unknown type
 					type = INT_MAX;
 				}
-
-				nums.push_back(number);
+				nums[i] = number;
 				i++;
 			}
 			std::vector<Point2d> points;
@@ -113,7 +112,7 @@ void convertArrayToObj(DataProvider* dataProvider, std::vector<Shape*>& shapes) 
 			case Objects::RECT: {
 				// Create obj
 				Shape* rect = factory(Objects::RECT);
-				((Rect*)rect)->set(points[0], points[1], points[2], points[3]);
+				(static_cast<Rect*>(rect))->set(points[0], points[1], points[2], points[3]);
 
 				shapes.push_back(rect);
 
@@ -123,7 +122,7 @@ void convertArrayToObj(DataProvider* dataProvider, std::vector<Shape*>& shapes) 
 				// Create obj
 				Shape* circle = factory(Objects::CIRCLE);
 				// First two numbers are for the point and the last is radius
-				((Circle*)circle)->set(Point2d(nums[0], nums[1]), nums[2]);
+				(static_cast<Circle*>(circle))->set(Point2d(nums[0], nums[1]), nums[2]);
 
 				shapes.push_back(circle);
 
@@ -134,9 +133,9 @@ void convertArrayToObj(DataProvider* dataProvider, std::vector<Shape*>& shapes) 
 
 				Shape* arch = factory(Objects::ARCH);
 				// First two numbers are for the point and the next is radius
-				((Arch*)arch)->set(Point2d(nums[0], nums[1]), nums[2]);
-				((Arch*)arch)->setAngles(nums[3], nums[4]); // Next are angles
-				((Arch*)arch)->setPoint(Point2d(nums[n - 2], nums[n - 1])); // Two last are for control point
+				(static_cast<Arch*>(arch))->set(Point2d(nums[0], nums[1]), nums[2]);
+				(static_cast<Arch*>(arch))->setAngles(nums[3], nums[4]); // Next are angles
+				(static_cast<Arch*>(arch))->setPoint(Point2d(nums[n - 2], nums[n - 1])); // Two last are for control point
 			
 				shapes.push_back(arch);
 
@@ -146,7 +145,7 @@ void convertArrayToObj(DataProvider* dataProvider, std::vector<Shape*>& shapes) 
 				// Create obj
 				Shape* polygon = factory(Objects::POLYGON);
 				for (const auto& p : points) {
-					((Polygon*)polygon)->addPoint(p);
+					(static_cast<Polygon*>(polygon))->addPoint(p);
 				}
 
 				shapes.push_back(polygon);
@@ -158,7 +157,7 @@ void convertArrayToObj(DataProvider* dataProvider, std::vector<Shape*>& shapes) 
 
 				Shape* polyline = factory(Objects::POLYLINE);
 				for (const auto& p : points) {
-					((Polyline*)polyline)->addPoint(p);
+					(static_cast<Polyline*>(polyline))->addPoint(p);
 				}
 
 				shapes.push_back(polyline);
@@ -169,7 +168,7 @@ void convertArrayToObj(DataProvider* dataProvider, std::vector<Shape*>& shapes) 
 				// Create obj
 				Shape* ut = factory(Objects::UNKNOWN);
 				for (const auto& e : nums) {
-					((UnknownType*)ut)->addEl(e);
+					(static_cast<UnknownType*>(ut))->addEl(e);
 				}
 
 				shapes.push_back(ut);
@@ -311,32 +310,58 @@ void test(const std::vector<Shape*>& objects) {
 	// perimeter
 	double expectedPerRect = 16;
 	double resPerRec = rect1->perimeter();
-	if (resPerRec != expectedPerRect)
+	if (!isEqualDouble(resPerRec, expectedPerRect, 1e-5))
 		printf("FAIL 8\n");
 	double expectedPerCircle = 10 * PI;
 	double resPerCircle = circle1->perimeter();
-	if (resPerCircle != expectedPerCircle)
+	if (!isEqualDouble(resPerCircle, expectedPerCircle, 1e-5))
 		printf("FAIL 9\n");
-	double expectedPerPolyline = 46.086;
-	double resPerPolyline = std::round(polyline1->perimeter() * 10 * 10 * 10) / (10 * 10 * 10); // round the result
-	if (resPerPolyline != expectedPerPolyline)
+	double expectedPerPolyline = 46.0856;
+	double resPerPolyline = polyline1->perimeter();
+	if (!isEqualDouble(resPerPolyline, expectedPerPolyline, 1e-4))
 		printf("FAIL 10\n");
 	double expectedPerPolygon = 145.326;
-	double resPerPolygon = std::round(polygon1->perimeter() * 10 * 10 * 10) / (10 * 10 * 10); // round the result
-	if (resPerPolygon != expectedPerPolygon)
+	double resPerPolygon = polygon1->perimeter();
+	if (!isEqualDouble(resPerPolygon, expectedPerPolygon, 1e-3))
 		printf("FAIL 11\n");
 	double expectedPerArch = PI * 5.0; // 180 degree so it will work
 	double resPerArch = arch1->perimeter();
-	if (resPerArch != expectedPerArch)
+	if (!isEqualDouble(resPerArch, expectedPerArch, 1e-6))
 		printf("FAIL 12\n");
 	double expectedPerArch3 = PI * 5;
 	double resPerArch3 = arch3->perimeter();
-	if (resPerArch3 != expectedPerArch3)
+	if (!isEqualDouble(resPerArch3, expectedPerArch3, 1e-6))
 		printf("FAIL 13\n");
-	double expectedPerArch4 = std::round((2 * PI * 15.0 - PI * 7.5) * 10 * 10 * 10) / (10 * 10 * 10);
-	double resPerArch4 = std::round(arch4->perimeter() * 10 * 10 * 10) / (10 * 10 * 10);
-	if (resPerArch4 != expectedPerArch4)
+	double expectedPerArch4 = (2 * PI * 15.0 - PI * 7.5);
+	double resPerArch4 = arch4->perimeter();
+	if (!isEqualDouble(resPerArch4, expectedPerArch4, 1e-6))
 		printf("FAIL 14\n");
+
+	// center
+	Point2d expectedResCenterRect = Point2d(3.0, 3.0);
+	Point2d centerRect = rect1->getCenter();
+	if (expectedResCenterRect != centerRect)
+		printf("FAIL 15\n");
+	Point2d expectedResCenterCircle1 = Point2d(10.0, 10.0);
+	Point2d centerCircle1 = circle1->getCenter();
+	if (expectedResCenterCircle1 != centerCircle1)
+		printf("FAIL 16\n");
+	Point2d expectedResCenterArch1 = Point2d(20.0, 20.0);
+	Point2d centerArch1 = arch1->getCenter();
+	if (expectedResCenterArch1 != centerArch1)
+		printf("FAIL 17\n");
+	double expectedResCenterXPolyline1 = (20 + 21 + 15 + 30 + 27) / 5.0;
+	double expectedResCenterYPolyline1 = (20 + 23 + 10 + 30 + 28) / 5.0;
+	Point2d centerPolyline1 = polyline1->getCenter();
+	Point2d expectedResCenterPolyline1 = Point2d(expectedResCenterXPolyline1, expectedResCenterYPolyline1);
+	if (centerPolyline1 != expectedResCenterPolyline1) 
+		printf("FAIL 18\n");
+	double expectedResCenterXPolygon1 = 8.48485;
+	double expectedResCenterYPolygon1 = 29.0909;
+	Point2d centerPolygon1 = polygon1->getCenter();
+	Point2d expectedResCenterPolygon1 = Point2d(expectedResCenterXPolygon1, expectedResCenterYPolygon1);
+	if (centerPolygon1 != expectedResCenterPolygon1)
+		printf("FAIL 19\n");
 }
 
 bool fileWriteRead(DataProvider* dataProvider, const std::vector<Shape*>& objects) {
@@ -403,19 +428,19 @@ void initObjects(std::vector<Shape*>& objects) {
 		Point2d p2(1.0, 5.0);
 		Point2d p3(5.0, 5.0);
 		Point2d p4(5.0, 1.0);
-		((Rect*)rect1)->set(p1, p2, p3, p4);
+		(static_cast<Rect*>(rect1))->set(p1, p2, p3, p4);
 		rect2->set(p1, p3);
 	}
 	{// Circle
 		Point2d p1(10.0, 10.0);
-		((Circle*)circle1)->set(p1, 5.0);
+		(static_cast<Circle*>(circle1))->set(p1, 5.0);
 		circle2->set(p1, 5.0);
 	}
 	{ // Arch
 		Point2d p1(20., 20.);
-		((Arch*)arch1)->set(p1, 5.0);
-		((Arch*)arch1)->setAngles(PI / 2, PI / 2);
-		((Arch*)arch1)->setPoint(Point2d(20.0, 25.0));
+		(static_cast<Arch*>(arch1))->set(p1, 5.0);
+		(static_cast<Arch*>(arch1))->setAngles(PI / 2, PI / 2);
+		(static_cast<Arch*>(arch1))->setPoint(Point2d(20.0, 25.0));
 		(arch2)->set(p1, 5.0);
 		(arch2)->setAngles(PI / 2, PI / 2);
 		(arch2)->setPoint(Point2d(20.0, 25.0));
@@ -433,7 +458,7 @@ void initObjects(std::vector<Shape*>& objects) {
 		Point2d p3(15.0, 10.0);
 		Point2d p4(30.0, 30.0);
 		Point2d p5(27.0, 28.0);
-		((Polyline*)polyline1)->set(p1, p2, p3, p4, p5);
+		(static_cast<Polyline*>(polyline1))->set(p1, p2, p3, p4, p5);
 		polyline2->set(p1, p2, p3, p4, p5);
 	}
 	{ // Polygon
@@ -442,49 +467,53 @@ void initObjects(std::vector<Shape*>& objects) {
 		Point2d p3(35.0, 25.0);
 		Point2d p4(0.0, 50.0);
 		Point2d p5(0.0, 0.0);
-		((Polygon*)polygon1)->set(p1, p2, p3, p4, p5);
+		(static_cast<Polygon*>(polygon1))->set(p1, p2, p3, p4, p5);
 		polygon2->set(p1, p2, p3, p4, p5);
 	}
 	{ // Unknowntype
 		for (int i = 0; i < 10; ++i) {
-			((UnknownType*)unknown1)->addEl(i * 1.4);
+			(static_cast<UnknownType*>(unknown1))->addEl(i * 1.4);
 			unknown2->addEl(i * 1.4);
 		}
 	}
-	objects.push_back(rect1);
-	objects.push_back(rect2);
-	objects.push_back(circle1);
-	objects.push_back(circle2);
-	objects.push_back(arch1);
-	objects.push_back(arch2);
-	objects.push_back(arch3);
-	objects.push_back(arch4);
-	objects.push_back(polygon1);
-	objects.push_back(polygon2);
-	objects.push_back(polyline1);
-	objects.push_back(polyline2);
-	objects.push_back(unknown1);
-	objects.push_back(unknown2);
+	objects[0] = rect1;
+	objects[1] = rect2;
+	objects[2] = circle1;
+	objects[3] = circle2;
+	objects[4] = arch1;
+	objects[5] = arch2;
+	objects[6] = arch3;
+	objects[7] = arch4;
+	objects[8] = polygon1;
+	objects[9] = polygon2;
+	objects[10] = polyline1;
+	objects[11] = polyline2;
+	objects[12] = unknown1;
+	objects[13] = unknown2;
 }
 
 size_t getSizeOfObject(Shape* obj) { // get size of object in the array
-	if (Arch* a = dynamic_cast<Arch*>(obj); a != nullptr) {
+
+	if (obj == nullptr) {
+		return 0;
+	}
+	if (obj->getType() == Objects::ARCH) {
 		return 9;
 	}
-	else if (Circle* c = dynamic_cast<Circle*>(obj); c != nullptr) {
+	else if (obj->getType() == Objects::CIRCLE) {
 		return 5;
-	}
+	}// I need to cast here because I need the number of points 
 	else if (Polygon* polygon = dynamic_cast<Polygon*>(obj); polygon != nullptr) {
 		size_t size = polygon->getPointCount() * 2 + 2;
 		return size;
-	}
+	}// I need to cast here because I need the number of points 
 	else if (Polyline* polyline = dynamic_cast<Polyline*>(obj); polyline != nullptr) {
 		size_t size = polyline->getPointCount() * 2 + 2;
 		return size;
 	}
-	else if (Rect* rect = dynamic_cast<Rect*>(obj); rect != nullptr) {
+	else if (obj->getType() == Objects::RECT) {
 		return 10;
-	}
+	}// I need to cast here because I need the number of points
 	else if (UnknownType* ut = dynamic_cast<UnknownType*>(obj); ut != nullptr) {
 		size_t size = ut->getData().size() + 2;
 		return size;
@@ -649,7 +678,7 @@ void menu() {
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	std::vector<Shape*> objects;
+	std::vector<Shape*> objects(14); // there will be 14 objects
 	initObjects(objects);
 	double* gData = nullptr;
 

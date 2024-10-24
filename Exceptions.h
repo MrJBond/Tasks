@@ -8,7 +8,7 @@
 class EndOfFile : public std::exception
 {
 private:
-    const std::string  message = "The end of the file has been reached!\n\n";
+    const std::string  m_message = "The end of the file has been reached!\n\n";
 public:
     EndOfFile();
     ~EndOfFile();
@@ -19,7 +19,7 @@ public:
 class ReadError : public std::exception 
 {
 private:
-    std::string message;
+    std::string m_message;
 public:
     ReadError(std::string message);
     ~ReadError();

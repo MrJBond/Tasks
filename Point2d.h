@@ -13,13 +13,17 @@ namespace geometry { // To let everyone know about operators
         double y() const { return m_dY; }
 
     private:
-        double m_dX;
-        double m_dY;
+        double m_dX = 0.;
+        double m_dY = 0.;
     };
+	inline bool isEqualDouble(double a, double b, double epsilon)
+	{
+		return fabs(a - b) < epsilon;
+	}
 
 	// inline - to include them only once when linking 
 	inline bool operator==(geometry::Point2d p1, geometry::Point2d p2) {
-		return (p1.x() == p2.x() && p1.y() == p2.y());
+		return (isEqualDouble(p1.x(), p2.x(), 1e-5) && isEqualDouble(p1.y(), p2.y(), 1e-5));
 	}
 	inline bool operator!=(geometry::Point2d p1, geometry::Point2d p2) {
 		return !(p1 == p2);

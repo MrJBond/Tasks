@@ -20,9 +20,9 @@ class DataProvider
 public:
 
     ~DataProvider() {
-        if (gData != nullptr) {
-            delete[] gData;
-            gData = nullptr;
+        if (m_gData != nullptr) {
+            delete[] m_gData;
+            m_gData = nullptr;
         }
     }
 
@@ -32,8 +32,8 @@ public:
     void readFromFile(std::string fileName);
 
     double* getData() {
-        if (gData != nullptr)
-            return gData;
+        if (m_gData != nullptr)
+            return m_gData;
     }
 
     // Delete copy constructor and assignment operator
@@ -48,19 +48,19 @@ public:
 
     void setArray(double* arr, long size) {
         // The array has been initialized in the constructor
-        delete[] gData;
-        this->gData = arr;
-        this->c = 0;
-        this->maxC = size;
+        delete[] m_gData;
+        m_gData = arr;
+        m_c = 0;
+        m_maxC = size;
     }
     size_t get_size() {
-        return maxC;
+        return m_maxC;
     }
     long getC(){
-        return c;
+        return m_c;
     }
     void setC(long c) {
-        this->c = c;
+        m_c = c;
     }
 
     void cleanShapes(std::vector<Shape*>& shapes);
@@ -75,29 +75,29 @@ public:
 
 private:
     // Private constructor for Singleton
-    DataProvider(long maxC) : maxC(maxC), c(0) {
-        gData = new double[maxC];
+    DataProvider(long maxC) : m_maxC(maxC), m_c(0) {
+        m_gData = new double[maxC];
     }
     static DataProvider* dataProvider;
 
     void checkC();
 
-    long c = 0; // curPos in the array
-    long maxC = 0; // array size
+    long m_c = 0; // curPos in the array
+    long m_maxC = 0; // array size
 
-    double *gData = nullptr;
+    double * m_gData = nullptr;
 
     // Read any file
-    std::string readNthLine(std::ifstream& file, int n);
-    int countLinesInFile(std::ifstream& file);
-    std::vector<double> stringToNumbers(std::string s);
-    Point2d getPoint(std::string point);
-    void getRect(std::ifstream& file, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i);
-    void getCircle(std::ifstream& file, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i);
-    void getArch(std::ifstream& file, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i);
-    void getPolyline(std::ifstream& file, int numberNumbersToRead, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i);
-    void getPolygon(std::ifstream& file, int numberNumbersToRead, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i);
-    void getUnknown(std::ifstream& file, std::vector<Shape*>& shapes, int& i);
+    std::string readNthLine(std::ifstream& file, int n) const;
+    int countLinesInFile(std::ifstream& file) const;
+    std::vector<double> stringToNumbers(std::string s) const;
+    Point2d getPoint(std::string point) const;
+    void getRect(std::ifstream& file, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) const;
+    void getCircle(std::ifstream& file, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) const;
+    void getArch(std::ifstream& file, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) const;
+    void getPolyline(std::ifstream& file, int numberNumbersToRead, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) const;
+    void getPolygon(std::ifstream& file, int numberNumbersToRead, std::vector<Shape*>& shapes, std::vector<Point2d>& points, int& i) const;
+    void getUnknown(std::ifstream& file, std::vector<Shape*>& shapes, int& i) const;
 
     // the struct to store data for the createObjectsFromNumbers function
     struct ReceivedObj {

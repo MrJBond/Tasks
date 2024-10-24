@@ -22,28 +22,35 @@ namespace geometry {
 		}
 
 		// Override those to prevent the class from being abstract
-		std::vector<Point2d> getPoints() override {
+		std::vector<Point2d> getPoints() const override {
 			std::vector<Point2d> v;
 			std::cout << "The unknown type has no points!" << std::endl;
 			return v;
 		}
 
-		bool isValid() override {
+		bool isValid() const override {
 			if (!data.empty()) {
 				return true;
 			}
 			return false;
 		}
-		std::vector<Point2d> boundingBox() override {
+		std::vector<Point2d> boundingBox() const override {
 			std::vector<Point2d> v;
 			std::cout << "The unknown type has no bounding box!" << std::endl;
 			return v;
 
 		}
-		double perimeter() override {
+		double perimeter() const override {
 			std::cout << "The unknown type has no perimeter!" << std::endl;
 			return 0.0;
 		}
+		int getType() const override {
+			return Objects::UNKNOWN;
+		}
+		Point2d getCenter() override {
+			std::cout << "The unknown type does not have the center" << std::endl;
+			return Point2d();
+		};
 	};
 
 }

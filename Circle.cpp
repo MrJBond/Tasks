@@ -1,11 +1,11 @@
 #include "Circle.h"
 
 void geometry::Circle::set(Point2d p, double r) {
-    this->center = p;
+    m_center = p;
 
     try {
         if (r >= 0) {
-            this->r = r;
+            m_r = r;
         }
         else {
             throw std::invalid_argument("Radius must be greater than 0!");
@@ -15,19 +15,19 @@ void geometry::Circle::set(Point2d p, double r) {
         std::cout << e.what();
     }
 }
-std::vector<geometry::Point2d> geometry::Circle::boundingBox() {
-    std::vector<Point2d> res;
+std::vector<geometry::Point2d> geometry::Circle::boundingBox() const {
+    std::vector<Point2d> res(4);
 
     // Calculate the bounding box corners based on the center and radius
-    double minX = center.x() - r;
-    double minY = center.y() - r;
-    double maxX = center.x() + r;
-    double maxY = center.y() + r;
+   const double minX = m_center.x() - m_r;
+   const double minY = m_center.y() - m_r;
+   const double maxX = m_center.x() + m_r;
+   const double maxY = m_center.y() + m_r;
 
     this->boundingBoxHelper(minY, minX, maxY, maxX, res);
     return res;
 }
-double geometry::Circle::perimeter() {
-    return 2 * PI * r;
+double geometry::Circle::perimeter() const {
+    return 2 * PI * m_r;
 }
 

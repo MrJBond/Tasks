@@ -39,15 +39,20 @@ std::pair<float, float> circlePoint(Circle* c, double theta) {
 }
 // These two will be passed as params
 void WDraw::drawOpenGl(Shape* obj, sf::RenderWindow* window) {
+
+    if (obj == nullptr) {
+        std::cerr << "OpenGl: Object to draw is NULL!" << std::endl;
+        return;
+    }
     
     std::vector<Point2d> points;
 
-    // just to make sure
+    // just to make sure (we will need c in calcTheta and circlePoint)
     if (Circle* c = dynamic_cast<Circle*>(obj); c != nullptr) {
         int glConnection = GL_LINE_LOOP; // Use GL_LINE_LOOP to connect points in a loop (for circle)
 
         // if this is an Arch
-        if (Arch* a = dynamic_cast<Arch*>(c); a != nullptr) {
+        if (obj->getType() == Objects::ARCH) {
             glConnection = GL_LINE_STRIP; // Use GL_LINE_STRIP not to connect the first and the last (for Arch)
         }
         glBegin(glConnection);
@@ -64,7 +69,7 @@ void WDraw::drawOpenGl(Shape* obj, sf::RenderWindow* window) {
         }
         glEnd();
     } // we don't pass it anyway but just to make sure
-    else if (UnknownType* ut = dynamic_cast<UnknownType*>(obj); ut != nullptr) {
+    else if (obj->getType() == Objects::UNKNOWN) {
         throw std::runtime_error("Unknown type doesn't have points!");
     }
     else { // in this case begin to draw as a polyline 
@@ -79,9 +84,7 @@ void WDraw::drawOpenGl(Shape* obj, sf::RenderWindow* window) {
     }
 
     // in this case draw the last segment
-    Polygon* polygon = dynamic_cast<Polygon*>(obj);
-    Rect* rect = rect = dynamic_cast<Rect*>(obj);
-    if (polygon != nullptr || rect != nullptr) {
+    if (obj->getType() == Objects::POLYGON || obj->getType() == Objects::RECT) {
         glBegin(GL_LINES);
         glVertex2f(points[0].x(), points[0].y());
         glVertex2f(points[points.size() - 1].x(), points[points.size() - 1].y());
@@ -96,22 +99,21 @@ void WDraw::drawSFMLline(SFML_line& line, double x, double y, double x2, double 
     line.vertex2 = sf::Vertex(sf::Vector2f(x2 * scaleFactor, y2 * scaleFactorY));
 }
 void WDraw::drawSFML(Shape* obj, sf::RenderWindow* window) {
+
+    if (obj == nullptr) {
+        std::cerr << "SFML: Object to draw is NULL!" << std::endl;
+        return;
+    }
     
     std::vector<Point2d> points;
     float scaleFactor = 20.0f;
 
     // object in SFML is a set of lines
     std::vector<WDraw::SFML_line> objSFML;
-    // just to make sure
+    // just to make sure (we will need c in calcTheta and circlePoint)
     if (Circle* c = dynamic_cast<Circle*>(obj); c != nullptr) {
         Point2d center = c->getCenter();
         double radius = c->getRadius();
-
-        int glConnection = GL_LINE_LOOP; // Use GL_LINE_LOOP to connect points in a loop (for circle)
-        // if this is an Arch
-        if (Arch* a = dynamic_cast<Arch*>(c); a != nullptr) {
-            glConnection = GL_LINE_STRIP; // Use GL_LINE_STRIP not to connect the first and the last (for Arch)
-        }
 
         int numSegments = 200;
         for (int i = 0; i <= numSegments; ++i) {
@@ -130,7 +132,7 @@ void WDraw::drawSFML(Shape* obj, sf::RenderWindow* window) {
             objSFML.push_back(line);
         }
     } // we don't pass it anyway but just to make sure
-    else if (UnknownType* ut = dynamic_cast<UnknownType*>(obj); ut != nullptr) {
+    else if (obj->getType() == Objects::UNKNOWN) {
         throw std::runtime_error("Unknown type doesn't have points!");
     }
     else { // in this case begin to draw as a polyline 
@@ -144,9 +146,7 @@ void WDraw::drawSFML(Shape* obj, sf::RenderWindow* window) {
     }
 
     // in this case draw the last segment
-    Polygon* polygon = dynamic_cast<Polygon*>(obj);
-    Rect* rect = rect = dynamic_cast<Rect*>(obj);
-    if (polygon != nullptr || rect != nullptr) {
+    if (obj->getType() == Objects::POLYGON || obj->getType() == Objects::RECT) {
         // draw the last line
         SFML_line line;
         drawSFMLline(line, points[0].x(), points[0].y(), points[points.size() - 1].x(), points[points.size() - 1].y(), scaleFactor);
@@ -173,7 +173,7 @@ void WDraw::drawPolyline(Shape* polyline, sf::RenderWindow* w, std::function<voi
     std::vector<Point2d> points = polyline->getPoints();
     // Print the lines
     for (int i = 1; i < points.size(); ++i) { // Suppose the points are in the right order 
-        this->drawSegment(points[i - 1], points[i]);
+        drawSegment(points[i - 1], points[i]);
     }
     if (f != nullptr)
         f(polyline, w);
@@ -182,24 +182,24 @@ void WDraw::drawPolyline(Shape* polyline, sf::RenderWindow* w, std::function<voi
 void WDraw::drawPolygon(Shape* polygon, sf::RenderWindow* w, std::function<void(Shape*, sf::RenderWindow*)> f) {
     std::vector<Point2d> points = polygon->getPoints();
     // Draw the same thing as polyline
-    this->drawPolyline(polygon, w, f);
+    drawPolyline(polygon, w, f);
 
     // Draw the last segment
-    this->drawSegment(points[points.size() - 1], points[0]);
+    drawSegment(points[points.size() - 1], points[0]);
 }
 void WDraw::drawCircle(Circle* c, sf::RenderWindow* w, std::function<void(Shape*, sf::RenderWindow*)> f) {
     Point2d center = c->getCenter();
     double radius = c->getRadius();
     std::cout << center;
-    this->drawText("And radius: ");
+    drawText("And radius: ");
     std::cout << radius << std::endl;
     std::cout << std::endl;
 
     // if this is an Arch
     if (Arch* a = dynamic_cast<Arch*>(c); a != nullptr) {
-        this->drawText("Angles: ");
+        drawText("Angles: ");
         std::cout << a->getAngles();
-        this->drawText("Control point: ");
+        drawText("Control point: ");
         std::cout << a->getControlPoint();
         if(f != nullptr)
             f(a, w);
@@ -210,7 +210,7 @@ void WDraw::drawCircle(Circle* c, sf::RenderWindow* w, std::function<void(Shape*
     }
 }
 void WDraw::drawArch(Arch* a, sf::RenderWindow* w, std::function<void(Shape*, sf::RenderWindow*)> f) {
-    this->drawCircle(a, w, f);
+    drawCircle(a, w, f);
 }
 
 void WDraw::drawObject(Shape* obj, sf::RenderWindow* w, std::function<void(Shape*, sf::RenderWindow*)> f) {
@@ -223,29 +223,29 @@ void WDraw::drawObject(Shape* obj, sf::RenderWindow* w, std::function<void(Shape
     std::vector<Point2d> points;
 
     if (Arch* a = dynamic_cast<Arch*>(obj); a != nullptr) { // Arch before Circle otherwise it would cast Arch obj to Circle
-        this->drawText("The arch with center: ");
-        this->drawArch(a, w, f);
+        drawText("The arch with center: ");
+        drawArch(a, w, f);
     }
     else if (Circle* c = dynamic_cast<Circle*>(obj); c != nullptr) {
         // special case for circle
-        this->drawText("\nThe circle with center: ");
-        this->drawCircle(c, w, f);
+        drawText("\nThe circle with center: ");
+        drawCircle(c, w, f);
     }
     else if (UnknownType* ut = dynamic_cast<UnknownType*>(obj); ut != nullptr) {
-        this->drawUnknownType(ut);
+        drawUnknownType(ut);
     }
     if (Polygon* polygon = dynamic_cast<Polygon*>(obj); polygon != nullptr) { // Polygon before Polyline otherwise it would cast Polygon obj to Polyline
-        this->drawText("\nThe lines of the polygon : ");
-        this->drawPolygon(polygon,w, f);
+        drawText("\nThe lines of the polygon : ");
+        drawPolygon(polygon,w, f);
     }
     else if (Polyline* poly = dynamic_cast<Polyline*>(obj); poly != nullptr) {
-        this->drawText("\nThe lines of the polyline : ");
-        this->drawPolyline(poly, w, f);
+        drawText("\nThe lines of the polyline : ");
+        drawPolyline(poly, w, f);
     }
     else if (Rect* rect = dynamic_cast<Rect*>(obj); rect != nullptr) {
-        this->drawText("\nThe lines of the rectangle : ");
+        drawText("\nThe lines of the rectangle : ");
         // The same as polygon
-        this->drawPolygon(rect, w, f);
+        drawPolygon(rect, w, f);
     }
     std::cout << std::endl << std::endl;
 }
@@ -295,10 +295,10 @@ int WDraw::initGraph(const std::vector<Shape*>& shapes) {
 
             // window is for SFML so nullptr here
             // pass lambda to be able to use this->
-            this->drawObject(s, nullptr, [&](Shape* obj, sf::RenderWindow* w) {
+            drawObject(s, nullptr, [&](Shape* obj, sf::RenderWindow* w) {
 
                 try {
-                    this->drawOpenGl(obj, w);
+                    drawOpenGl(obj, w);
                 }
                 catch (const std::runtime_error& e) {
                     std::cout << e.what();
@@ -358,10 +358,10 @@ void WDraw::initGraphSFML(const std::vector<Shape*>& shapes) {
         window.clear();
         for (const auto& shape : shapes) {
             // pass lambda to be able to use this->
-            this->drawObject(shape, &window, [&](Shape* obj, sf::RenderWindow* window) {
+            drawObject(shape, &window, [&](Shape* obj, sf::RenderWindow* window) {
 
                 try {
-                    this->drawSFML(obj, window);
+                    drawSFML(obj, window);
                 }
                 catch (const std::runtime_error& e) {
                     std::cout << e.what();

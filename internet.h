@@ -80,13 +80,15 @@ namespace InternetRW
 
 	int getInt() {
 		checkC();
-		int i = (int)data[c++];
+        double* dt = &data[0];
+		int i = (int)dt[c++];
 		return i;
 	}
     
 	double getDouble() {
 		checkC();
-		double d = data[c++];
+        double* dt = &data[0]; // it's faster
+		double d = dt[c++];
 		return d;
 	}
 }
